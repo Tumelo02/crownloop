@@ -506,3 +506,15 @@ Every creature is driven only through `setIntent(x, y, throttle)`. Local input, 
   the phone share sheet or the clipboard). Leaderboard: WORLDWIDE and ALL-TIME are first and default; a FRIENDS view
   lists CrazyGames friends (their scores need online play).
 - How to Play tabs rewritten in short, simple sentences.
+
+## 30 players, bots that fight back, difficulty, hosting
+
+- `WORLD.CAPACITY` 30 on a `WORLD.RADIUS` 3900 planet (the same space per player as 20 had on 3200).
+- Bots fight back (`ENEMY.DEFEND_*`, `GRUDGE_*`, `DANGER_RANGE`): a rival trail inside a bot's land gets hunted,
+  a bot hunts whoever knocked it out last (`Participant.grudgeSlot`), and an exposed bot with a rival close runs
+  home boosting.
+- EASY / NORMAL / HARD above PLAY (`DIFFICULTY` in config, `ui/DifficultyPicker.js`, `Enemy.setBotDifficulty`):
+  multipliers on aggression, notice range, reaction time, chase time, turning and fighting back. Saved per device.
+- Hosting: `vercel.json` runs `npm run build` and serves `dist/`. Push to GitHub, import the repo in Vercel.
+- Balance note (simulated 8-minute matches): with the 8% crown, bots peak at about 4-7.4% and rarely take the
+  crown on their own; lowering `KING.MINIMUM_ARENA_PERCENT` makes bot Kings common again.
