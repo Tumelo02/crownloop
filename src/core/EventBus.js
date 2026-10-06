@@ -18,7 +18,6 @@ export class EventBus {
 
 export const GameEvent = Object.freeze({
   CHARACTER_SELECTED: 'characterSelected', // { skinId, element, name }
-  GALAXY_EVENT_CHANGED: 'galaxyEventChanged', // { event: { id, label, blurb, ... } | null }
   ENERGY_COLLECTED: 'energyCollected',
   COIN_COLLECTED: 'coinCollected', // { creature, coin, value, multiplied }
   POWER_UP_COLLECTED: 'powerUpCollected',

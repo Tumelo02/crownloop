@@ -324,11 +324,11 @@ export const DIFFICULTY = Object.freeze({
     }),
     normal: Object.freeze({
       label: 'NORMAL', aggression: 1.45, sense: 1.3, think: 0.6, chase: 1.5, turn: 1.15, speed: 1.03, boost: 0.7,
-      playerBonus: 0.2, fight: 1.3, expand: 1.5, infight: 0.15, caution: 1.2, growth: 1.6, loops: 1.3, apex: 3.5, apexHunt: 1.2, beef: 0.45, aim: 7, hunters: 2, playerSense: 1.5, playerFocus: true,
+      playerBonus: 0.2, fight: 1.3, expand: 1.5, infight: 0.45, caution: 1.2, growth: 1.6, loops: 1.3, apex: 3.5, apexHunt: 1.2, beef: 0.45, aim: 7, hunters: 2, playerSense: 1.5, playerFocus: true,
     }),
     hard: Object.freeze({
       label: 'HARD', aggression: 2.1, sense: 1.7, think: 0.35, chase: 2.4, turn: 1.3, speed: 1.08, boost: 0.35,
-      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.02, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
+      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.25, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
     }),
   }),
 });
@@ -506,40 +506,6 @@ export const MOMENTUM = Object.freeze({
   MAX_CHAIN: 6,
 });
 
-export const GALAXY_EVENTS = Object.freeze({
-  CYCLE_SECONDS: 50,
-  WINDOW_SECONDS: 18,
-  POOLS: Object.freeze([
-    Object.freeze({
-      id: 'calm-current',
-      label: 'CALM CURRENT',
-      blurb: 'Rivals slow down and chase less for a while.',
-      tint: '#76d3ff',
-      modifier: { botAgility: 0.9, botChaseBias: 0.92 },
-    }),
-    Object.freeze({
-      id: 'crosswind',
-      label: 'CROSSWIND',
-      blurb: 'Rivals turn faster and chase harder for a while.',
-      tint: '#7ef0d2',
-      modifier: { botAgility: 1.12, botChaseBias: 1.08 },
-    }),
-    Object.freeze({
-      id: 'gravity-well',
-      label: 'GRAVITY WELL',
-      blurb: 'Rivals move slower but chase harder for a while.',
-      tint: '#d4b7ff',
-      modifier: { botAgility: 0.84, botChaseBias: 1.15 },
-    }),
-    Object.freeze({
-      id: 'solar-gleam',
-      label: 'SOLAR GLEAM',
-      blurb: 'Rivals move faster and chase much harder for a while.',
-      tint: '#ffd87a',
-      modifier: { botAgility: 1.05, botChaseBias: 1.18 },
-    }),
-  ]),
-});
 
 export const STRATEGIC_LANDMARKS = Object.freeze({
   CLAIM_BEACON: 3,

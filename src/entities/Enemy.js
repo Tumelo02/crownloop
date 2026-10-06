@@ -51,8 +51,6 @@ export class Enemy extends Creature {
       returning: false,
       widenTime: 0, // seconds left of the sideways "widen the loop" leg before heading home
       boostHeld: false,
-      eventAgility: 1,
-      eventChaseBias: 1,
       goal: null, // 'expand' | 'raid' | 'forage'
       goalTime: 0,
     };
@@ -170,7 +168,7 @@ export class Enemy extends Creature {
     if (prey && ai.chaseCooldown <= 0) {
       const chance = (prey.isPlayer
         ? ai.aggression + ENEMY.PLAYER_INTEREST_BONUS + LEVEL.playerBonus
-        : ai.aggression * vsBot) * ai.eventChaseBias;
+        : ai.aggression * vsBot);
       if (Math.random() < chance) {
         ai.state = AIState.CHASE;
         ai.target = prey;
@@ -278,14 +276,6 @@ export class Enemy extends Creature {
     dx /= length;
     dy /= length;
 
-    // Galaxy events lightly bias bot movement without changing the game rules.
-    const agility = ai.eventAgility || 1;
-    throttle *= agility;
-    if (agility < 1) {
-      const steerScale = 0.6 + (1 - agility) * 0.75;
-      dx *= steerScale;
-      dy *= steerScale;
-    }
 
     // Off its own land, any touch is lethal: veer away from nearby bodies.
     if (!this.inSafeArea && this.world) {
@@ -329,7 +319,7 @@ export class Enemy extends Creature {
     }
 
     // An open trail is a risk: hurry, and boost home once the loop is long.
-    if (ai.state !== AIState.CHASE && this.isExposed) throttle = Math.max(throttle, ENEMY.EXPOSED_THROTTLE * agility);
+    if (ai.state !== AIState.CHASE && this.isExposed) throttle = Math.max(throttle, ENEMY.EXPOSED_THROTTLE);
     this.setIntent(dx, dy, throttle);
     const territory = this.world?.territory;
     const longTrail = ai.returning && territory

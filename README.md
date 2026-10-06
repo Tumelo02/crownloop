@@ -530,3 +530,13 @@ Every creature is driven only through `setIntent(x, y, throttle)`. Local input, 
 - Simulated 8-minute, 30-player matches (player idle): bot peaks EASY 6-9%, NORMAL 9-17%, HARD 11-14%, bot Kings in
   every match (3-8 crown changes). Pressure on a looping player: chases per minute EASY 0, NORMAL 1.7, HARD 8.2;
   bots stalking you EASY 0, NORMAL 2.4, HARD 5.
+
+## Bot war balance, galaxy events removed
+
+- Galaxy events (CALM CURRENT, CROSSWIND, GRAVITY WELL, SOLAR GLEAM) are removed entirely: no banners, and nothing
+  changes bot speed or chasing mid-match any more.
+- `infight` raised (NORMAL 0.45, HARD 0.25) so bots fight each other again; the player stays the priority target
+  (`playerFocus`, hunters, beef).
+- Measured with an active player in 8-minute, 30-player matches: 270-520 bot-vs-bot knockouts per match, a bot King
+  in every match at every level (1-8 crown changes), chases on the player per minute EASY ~0.5, NORMAL ~1.6, HARD 4-8
+  with ~5 bots stalking the player on HARD.

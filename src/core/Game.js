@@ -1,5 +1,5 @@
 import {
-  AUDIO, BOOST, COMBAT, ENEMY, KILLSTREAK, REVENGE, ENERGY, FEEDBACK, FLUX_CORE, FLOW, GALAXY_EVENTS, KING, LANDMARKS, MATCH, MOMENTUM,
+  AUDIO, BOOST, COMBAT, ENEMY, KILLSTREAK, REVENGE, ENERGY, FEEDBACK, FLUX_CORE, FLOW, KING, LANDMARKS, MATCH, MOMENTUM,
   PARTICLES, RIFT,
   PLAYER, POWER_UPS, RENDER, SCORE, STASIS, STARTER, SURGE, TERRITORY, TUTORIAL, WORLD,
 } from '../config.js';
@@ -166,9 +166,6 @@ export class Game {
     this.foodStreakAt = -Infinity;
     this.momentumChain = 0;
     this.momentumLastActionAt = -Infinity;
-    this.galaxyEvent = null;
-    this.galaxyEventTimer = 0;
-    this.galaxyEventPhase = 0;
     this.wasBoosting = false;
     this.activePowerUpIds = new Set();
 
@@ -457,9 +454,6 @@ export class Game {
     this.kings.reset();
     this.minimap.reset();
     this.announcer.clear();
-    this.galaxyEvent = null;
-    this.galaxyEventTimer = 0;
-    this.galaxyEventPhase = 0;
 
     // Seats: slot 1 is the local player, the rest are AI (later: remote players).
     // Colours follow the element: the player gets its element's exact hue, rivals the
@@ -562,9 +556,6 @@ export class Game {
     this.wasSafe = false;
     this.wasBoosting = false;
     this.activePowerUpIds.clear();
-    this.galaxyEvent = null;
-    this.galaxyEventTimer = 0;
-    this.galaxyEventPhase = 0;
     // Per-life stats for the results card (XP is diffed against the match totals).
     this.life = {
       start: this.time,
@@ -1135,8 +1126,6 @@ export class Game {
     const matchOver = this.world.tick(dt);
     this.bumpCooldown = Math.max(0, this.bumpCooldown - dt);
     this.capturedThisFrame = false;
-    this.updateGalaxyEvent(dt);
-    this.applyGalaxyEventModifier();
     // Landmarks: each runs its own ON/OFF clock. A switch-on is announced (banner + sound) only
     // when it is near you or yours, at most every LANDMARKS.ANNOUNCE_GAP seconds.
     this.claimBeacon.update(dt);
@@ -1359,61 +1348,6 @@ export class Game {
         }
       }
       this.landmarkAmbienceTimer = played ? LANDMARKS.AMBIENCE_INTERVAL : 0.5;
-    }
-  }
-
-  getGalaxyEventAt(time) {
-    const eventPool = GALAXY_EVENTS.POOLS;
-    if (!eventPool.length) return null;
-    const index = Math.floor(time / GALAXY_EVENTS.CYCLE_SECONDS) % eventPool.length;
-    const evt = eventPool[index];
-    return evt ? { ...evt, modifier: { ...evt.modifier } } : null;
-  }
-
-  updateGalaxyEvent(dt) {
-    if (!this.world || this.state !== GameState.PLAYING) return;
-    this.galaxyEventTimer += dt;
-    const cycle = GALAXY_EVENTS.CYCLE_SECONDS;
-    const window = GALAXY_EVENTS.WINDOW_SECONDS;
-    const nominal = this.getGalaxyEventAt(this.time);
-    const nextEvent = this.galaxyEventTimer >= cycle
-      ? this.getGalaxyEventAt(this.time + dt)
-      : nominal;
-
-    if (!this.galaxyEvent && nextEvent) {
-      this.galaxyEvent = nextEvent;
-      this.galaxyEventPhase = 0;
-      this.events.emit(GameEvent.GALAXY_EVENT_CHANGED, { event: this.galaxyEvent });
-      this.announcer.show(this.galaxyEvent.label, this.galaxyEvent.blurb, AnnounceStyle.GROW, 2.3);
-      return;
-    }
-
-    if (this.galaxyEvent && nextEvent && this.galaxyEvent.id !== nextEvent.id) {
-      this.galaxyEvent = nextEvent;
-      this.galaxyEventPhase = 0;
-      this.events.emit(GameEvent.GALAXY_EVENT_CHANGED, { event: this.galaxyEvent });
-      this.announcer.show(this.galaxyEvent.label, this.galaxyEvent.blurb, AnnounceStyle.GROW, 2.3);
-      return;
-    }
-
-    if (this.galaxyEvent) {
-      const elapsed = this.galaxyEventTimer % cycle;
-      const active = elapsed < window;
-      if (!active) {
-        this.galaxyEvent = null;
-        this.galaxyEventPhase = 0;
-        this.events.emit(GameEvent.GALAXY_EVENT_CHANGED, { event: null });
-      }
-    }
-  }
-
-  applyGalaxyEventModifier() {
-    const event = this.galaxyEvent;
-    if (!event || !this.creatures.length) return;
-    for (const creature of this.creatures) {
-      if (creature.isPlayer || !creature.ai) continue;
-      creature.ai.eventAgility = event.modifier.botAgility ?? 1;
-      creature.ai.eventChaseBias = event.modifier.botChaseBias ?? 1;
     }
   }
 
