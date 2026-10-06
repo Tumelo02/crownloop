@@ -1,0 +1,12 @@
+# Installed packages and generated files
+node_modules/
+dist/
+*.zip
+
+# Local test leftovers
+.playwright-mcp/
+.landmark-*.mjs
+smooth.png
+
+# Third-party reference copy (CrazyGames documentation)
+CrazyGames Doc.txt

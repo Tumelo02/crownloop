@@ -1,0 +1,19 @@
+{
+  "name": "crownloop",
+  "version": "1.0.0",
+  "description": "Crownloop: loop the land, cut the trails, take the crown.",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.mjs",
+    "serve": "python serve.py dist 8000",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "package": "node build.mjs && powershell -NoProfile -Command \"Compress-Archive -Path dist\\* -DestinationPath crownloop-crazygames.zip -Force\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}
