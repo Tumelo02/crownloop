@@ -16,7 +16,7 @@ Before every upload, check `src/config.js`:
 
 Crownloop: loop the land, cut the trails, take the crown. Leave your territory to draw a trail, loop back
 home and everything inside becomes yours. While your trail is open you are exposed: any rival who touches
-it takes you out, and you can cut theirs the same way. Hold the most land (at least 8% of the planet) to
+it takes you out, and you can cut theirs the same way. Hold the most land (at least 6% of the planet) to
 wear the crown, but beware: if the King takes you out, your match is over. Unlock nine elemental
 characters, spin the daily wheel, complete daily missions and invite your friends.
 

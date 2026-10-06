@@ -5,7 +5,7 @@ const STEPS = Object.freeze([
   { icon: 'land', title: 'CLAIM TERRITORY', text: 'Leave your territory and loop back: everything inside becomes yours.' },
   { icon: 'hunt', title: 'USE BOOST', text: 'Hold left click to use energy and move faster.' },
   { icon: 'hunt', title: 'COMPETE', text: 'Your territory is safe. Off it, a cut trail, your own trail, or touching a rival is fatal.' },
-  { icon: 'crown', title: 'BECOME KING', text: 'Hold the most territory (at least 8% of the map).' },
+  { icon: 'crown', title: 'BECOME KING', text: 'Hold the most territory (at least 6% of the map).' },
 ]);
 
 // The letters on the player's own keyboard for the movement keys (ZQSD on AZERTY, etc.).

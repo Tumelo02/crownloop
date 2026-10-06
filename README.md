@@ -516,5 +516,17 @@ Every creature is driven only through `setIntent(x, y, throttle)`. Local input, 
 - EASY / NORMAL / HARD above PLAY (`DIFFICULTY` in config, `ui/DifficultyPicker.js`, `Enemy.setBotDifficulty`):
   multipliers on aggression, notice range, reaction time, chase time, turning and fighting back. Saved per device.
 - Hosting: `vercel.json` runs `npm run build` and serves `dist/`. Push to GitHub, import the repo in Vercel.
-- Balance note (simulated 8-minute matches): with the 8% crown, bots peak at about 4-7.4% and rarely take the
-  crown on their own; lowering `KING.MINIMUM_ARENA_PERCENT` makes bot Kings common again.
+
+## Difficulty rework (crown 6%)
+
+- Crown at 6% (`KING.MINIMUM_ARENA_PERCENT`). Levels (`DIFFICULTY.LEVELS`): EASY = the old Normal, NORMAL = the old
+  Hard, HARD = new, extreme: "you against the planet".
+- Bots never cross their own trail any more (`Enemy.avoidOwnTrail` simulates the turning arc; self-crossings were a
+  third of all bot deaths), flee with a wide swing (no U-turn) and never chase something behind them while exposed.
+- Per level: `infight` (bots fight each other less, so they grow), `apex`/`apexHunt` (a bot holding that % turns
+  predator: hunts and raids smaller bots, so empires snowball), `hunters` (bots that track the player anywhere),
+  `playerSense`/`playerFocus` (bots notice and target you first), `beef` (a bot you knocked out comes for you),
+  `loops`/`growth`, `aim`, `speed`, `boost`, `caution`.
+- Simulated 8-minute, 30-player matches (player idle): bot peaks EASY 6-9%, NORMAL 9-17%, HARD 11-14%, bot Kings in
+  every match (3-8 crown changes). Pressure on a looping player: chases per minute EASY 0, NORMAL 1.7, HARD 8.2;
+  bots stalking you EASY 0, NORMAL 2.4, HARD 5.

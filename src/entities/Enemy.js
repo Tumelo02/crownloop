@@ -1,4 +1,4 @@
-import { CLAIM_BEACON, DIFFICULTY, ENEMY, FLUX_CORE, RIFT } from '../config.js';
+import { CLAIM_BEACON, DIFFICULTY, ENEMY, FLUX_CORE, RIFT, TERRITORY } from '../config.js';
 import { clamp, distSq, randRange } from '../utils/math.js';
 import { Creature } from './Creature.js';
 import { ARENA, arenaDistance, clampToArena } from '../world/arena.js';
@@ -45,9 +45,9 @@ export class Enemy extends Creature {
       chaseCooldown: options.chaseGrace || 0,
       forageDelay: options.forageDelay || 0, // seconds before it starts seeking energy
       aggression: randRange(...persona.aggression),
-      loopLimit: randRange(...persona.loopCells),
+      loopLimit: randRange(...persona.loopCells) * LEVEL.loops,
       // ...and by path length too: wandering back over its own cells adds path, not cells.
-      loopPoints: randRange(...persona.loopPoints),
+      loopPoints: randRange(...persona.loopPoints) * LEVEL.loops,
       returning: false,
       widenTime: 0, // seconds left of the sideways "widen the loop" leg before heading home
       boostHeld: false,
@@ -59,6 +59,8 @@ export class Enemy extends Creature {
     this.homeTarget = { x: 0, y: 0 };
     this.centre = { x: 0, y: 0 };
     this.grudgeSlot = options.grudgeSlot || 0; // who knocked this seat out last time
+    // Hunters (LEVEL.hunters of them, by seat) track the human player down wherever they are.
+    this.hunter = Math.max(0, options.slot - 2) < LEVEL.hunters;
     this.ai.aggression *= LEVEL.aggression;
     this.maxTurnRate = ENEMY.MAX_TURN_RATE * LEVEL.turn;
     this.pickWaypoint();
@@ -114,34 +116,47 @@ export class Enemy extends Creature {
     const persona = this.persona;
     const territory = world.territory;
     const exposed = territory.trailLength(this.slot) > 0;
+    // An empire (LEVEL.apex % of the map or more) turns predator: it hunts and raids smaller bots,
+    // and spots them from farther away.
+    const apex = LEVEL.apex > 0 && territory.percentFor(this.slot) >= LEVEL.apex;
+    const apexSense = apex ? 1.5 : 1;
     for (const other of world.creatures) {
       if (other === this || !other.alive) continue;
       const d2 = distSq(this.x, this.y, other.x, other.y);
-      if (exposed && d2 < ENEMY.DANGER_RANGE * ENEMY.DANGER_RANGE) danger = true;
+      const dangerRange = ENEMY.DANGER_RANGE * LEVEL.caution;
+      if (exposed && d2 < dangerRange * dangerRange) danger = true;
       if (other.huntGrace > 0 || !other.isExposed) continue;
       // Elements that are harder to notice (Void) are sensed from a little closer.
-      const sense = ENEMY.SENSE_RANGE * persona.sense * other.profile.detectability * LEVEL.sense;
+      const sense = ENEMY.SENSE_RANGE * persona.sense * other.profile.detectability * LEVEL.sense
+        * (other.isPlayer ? LEVEL.playerSense : apexSense);
       if (other.slot === this.grudgeSlot && d2 < (sense * ENEMY.GRUDGE_SENSE) ** 2) grudge = other;
       if (d2 < ENEMY.DEFEND_RANGE * ENEMY.DEFEND_RANGE && this.invades(other, territory)) invader = other;
-      if (d2 < sense * sense && d2 < preyDist && this.wouldHunt(other, d2, world)) {
+      const willing = (other.isPlayer && LEVEL.playerFocus) || this.wouldHunt(other, d2, world);
+      const playerFirst = LEVEL.playerFocus && prey && prey.isPlayer; // you stay the priority
+      if (d2 < sense * sense && willing && ((other.isPlayer && LEVEL.playerFocus) || (d2 < preyDist && !playerFirst))) {
         prey = other;
         preyDist = d2;
       }
     }
 
     // Exposed and someone is on top of us: run home now (boosting), no detours.
+    // (A wide swing first, never a U-turn over its own fresh trail, then home at full boost.)
     if (danger && !ai.returning && ai.state !== AIState.CHASE) {
       ai.returning = true;
-      ai.widenTime = 0;
       ai.fleeing = true;
+      this.startWidening(territory);
     }
 
     if (ai.state === AIState.CHASE) return; // still a valid chase
 
     // Fighting back comes first: defend our land, then settle the score with our last killer.
+    // Chances are per decision; faster-thinking bots decide more often, so bot-vs-bot chances are
+    // scaled by `think` too. Against bots, `infight` damps it further (harder levels: they save it for you).
     const fight = Math.min(0.97, LEVEL.fight);
-    const counter = invader && Math.random() < ENEMY.DEFEND_CHANCE * fight ? invader
-      : grudge && Math.random() < ENEMY.GRUDGE_CHANCE * fight ? grudge : null;
+    const vsBot = (apex ? LEVEL.apexHunt : LEVEL.infight) * LEVEL.think;
+    const odds = (target, base) => base * fight * (target.isPlayer ? 1 : vsBot);
+    const counter = invader && Math.random() < odds(invader, ENEMY.DEFEND_CHANCE) ? invader
+      : grudge && Math.random() < odds(grudge, ENEMY.GRUDGE_CHANCE) ? grudge : null;
     if (counter && !danger) {
       ai.state = AIState.CHASE;
       ai.target = counter;
@@ -149,8 +164,13 @@ export class Enemy extends Creature {
       return;
     }
 
+    // While its own trail is open, never chase something behind it (that U-turn crosses its line).
+    if (prey && exposed && this.behind(prey)) prey = null;
+    if (counter && exposed && this.behind(counter)) return;
     if (prey && ai.chaseCooldown <= 0) {
-      const chance = (ai.aggression + (prey.isPlayer ? ENEMY.PLAYER_INTEREST_BONUS + LEVEL.playerBonus : 0)) * ai.eventChaseBias;
+      const chance = (prey.isPlayer
+        ? ai.aggression + ENEMY.PLAYER_INTEREST_BONUS + LEVEL.playerBonus
+        : ai.aggression * vsBot) * ai.eventChaseBias;
       if (Math.random() < chance) {
         ai.state = AIState.CHASE;
         ai.target = prey;
@@ -168,8 +188,8 @@ export class Enemy extends Creature {
       ai.returning = false; // captured
       ai.fleeing = false;
       ai.widenTime = 0;
-      ai.loopLimit = randRange(...persona.loopCells);
-      ai.loopPoints = randRange(...persona.loopPoints);
+      ai.loopLimit = randRange(...persona.loopCells) * LEVEL.loops;
+      ai.loopPoints = randRange(...persona.loopPoints) * LEVEL.loops;
       ai.goalTime = 0; // fresh goal after every capture
       this.pickWaypoint();
     }
@@ -190,11 +210,12 @@ export class Enemy extends Creature {
     }
 
     if (trail > 0) return; // keep a stable heading while exposed instead of chasing new energy
+    if (this.stalk(world)) return;
     // Territory war: pick (or keep) a goal. Expanding and raiding set their own waypoint.
     if (ai.goalTime <= 0) {
       ai.goalTime = ENEMY.GOAL_TIME;
       const roll = Math.random();
-      const raid = persona.raid * LEVEL.aggression;
+      const raid = persona.raid * LEVEL.aggression * (apex ? 3 : 1);
       const expand = persona.expand * LEVEL.expand;
       if (ai.forageDelay <= 0 && roll < raid && this.pickRaidWaypoint(world)) ai.goal = 'raid';
       else if (ai.forageDelay <= 0 && roll < raid + expand && this.pickExpansionWaypoint(world.territory)) ai.goal = 'expand';
@@ -242,7 +263,7 @@ export class Enemy extends Creature {
       const aim = this.inSafeArea ? ai.target : this.trailAimPoint(ai.target) || ai.target;
       dx = aim.x - this.x;
       dy = aim.y - this.y;
-      throttle = ENEMY.CHASE_THROTTLE;
+      throttle = Math.min(1, ENEMY.CHASE_THROTTLE * LEVEL.speed);
     } else {
       dx = ai.waypointX - this.x;
       dy = ai.waypointY - this.y;
@@ -292,6 +313,13 @@ export class Enemy extends Creature {
       dy -= ((this.y - ARENA.CY) / fromCentre) * push;
     }
 
+    // Own trail ahead? Bend away from it (a good player never crosses their own line).
+    if (this.isExposed && this.world) {
+      const turned = this.avoidOwnTrail(dx, dy);
+      dx = turned.x;
+      dy = turned.y;
+    }
+
     // Slow into sharp turns (like a driver): a tighter circle, so it never orbits a nearby
     // waypoint and runs over its own trail.
     const off = Math.abs(Math.atan2(Math.sin(Math.atan2(dy, dx) - this.moveAngle), Math.cos(Math.atan2(dy, dx) - this.moveAngle)));
@@ -306,7 +334,25 @@ export class Enemy extends Creature {
     const territory = this.world?.territory;
     const longTrail = ai.returning && territory
       && territory.trailLength(this.slot) >= ai.loopLimit * this.loopScale(territory) * ENEMY.RETURN_BOOST_SHARE;
-    this.ai.boostHeld = (ai.state === AIState.CHASE || longTrail || ai.fleeing) && this.energy > this.persona.boostMin;
+    this.ai.boostHeld = (ai.state === AIState.CHASE || longTrail || ai.fleeing) && this.energy > this.persona.boostMin * LEVEL.boost;
+  }
+
+  /**
+   * Beef: if the human player knocked this seat out, the bot goes looking for them anywhere on
+   * the map (LEVEL.beef chance per decision), parking just outside their land to pounce as soon
+   * as they step out. The regular chase logic takes over once the player's trail is open.
+   */
+  stalk(world) {
+    const target = world.creatures.find((c) => c.alive && c.isPlayer);
+    if (!target) return false;
+    const beef = this.grudgeSlot === target.slot && Math.random() < LEVEL.beef;
+    if (!this.hunter && !beef) return false;
+    const angle = Math.atan2(this.y - target.y, this.x - target.x) + randRange(-0.6, 0.6);
+    const keep = 220 + Math.random() * 180;
+    this.setWaypoint(target.x + Math.cos(angle) * keep, target.y + Math.sin(angle) * keep, ENEMY.SPAWN_MARGIN);
+    this.ai.goal = 'stalk';
+    this.ai.goalTime = 2;
+    return true;
   }
 
   /** A rival whose open trail runs through (or right along) this bot's land is invading it. */
@@ -320,9 +366,52 @@ export class Enemy extends Creature {
     return false;
   }
 
+  /** True when `other` is more than ~100 degrees off this bot's heading. */
+  behind(other) {
+    const a = Math.atan2(other.y - this.y, other.x - this.x) - this.moveAngle;
+    return Math.cos(a) < -0.17;
+  }
+
+  /**
+   * Turning toward (dx, dy) would sweep an ARC (the bot can't turn instantly). Simulate that arc
+   * for ~0.9 s; if it would cross this bot's own open trail, try other headings (bending away by
+   * growing angles, or holding the current course) and take the first safe one.
+   */
+  avoidOwnTrail(dx, dy) {
+    const base = Math.atan2(dy, dx);
+    if (this.arcClear(base)) return { x: dx, y: dy };
+    for (const off of [0.5, -0.5, 1, -1, 1.6, -1.6, 2.3, -2.3]) {
+      if (this.arcClear(base + off)) return { x: Math.cos(base + off), y: Math.sin(base + off) };
+    }
+    return { x: Math.cos(this.moveAngle), y: Math.sin(this.moveAngle) }; // boxed in: hold course
+  }
+
+  arcClear(target) {
+    const territory = this.world.territory;
+    const speed = Math.max(this.moveSpeed, 120);
+    const turn = Number.isFinite(this.maxTurnRate) ? this.maxTurnRate * this.profile.turn : 6;
+    const reach = this.radius * 0.7 + 6;
+    const skip = Math.ceil((this.radius * TERRITORY.SELF_CUT_SAFE_LENGTH_RADII) / TERRITORY.TRAIL_POINT_SPACING) + 2;
+    let angle = this.moveAngle;
+    let x = this.x;
+    let y = this.y;
+    const step = 0.1;
+    for (let t = 0; t < 0.9; t += step) {
+      const diff = Math.atan2(Math.sin(target - angle), Math.cos(target - angle));
+      angle += Math.max(-turn * step, Math.min(turn * step, diff));
+      const nx = x + Math.cos(angle) * speed * step;
+      const ny = y + Math.sin(angle) * speed * step;
+      if (territory.pathCrossesTrail(this.slot, x, y, nx, ny, reach, skip)) return false;
+      if (territory.ownerAt(nx, ny) === this.slot) return true; // home: the loop closes safely
+      x = nx;
+      y = ny;
+    }
+    return true;
+  }
+
   /** Bigger empires take bigger bites: x1 for a fresh start, up to x(1 + LOOP_GROWTH_MAX). */
   loopScale(territory) {
-    return 1 + Math.min(ENEMY.LOOP_GROWTH_MAX, Math.sqrt(territory.countFor(this.slot)) / ENEMY.LOOP_GROWTH);
+    return 1 + Math.min(ENEMY.LOOP_GROWTH_MAX * LEVEL.growth, Math.sqrt(territory.countFor(this.slot)) / ENEMY.LOOP_GROWTH);
   }
 
   /**
@@ -447,7 +536,7 @@ export class Enemy extends Creature {
   trailAimPoint(prey) {
     const path = this.world && this.world.territory.trailPaths[prey.slot];
     if (!path || path.length < 6) return null;
-    return path[Math.max(0, path.length - 1 - ENEMY.TRAIL_AIM_POINTS)];
+    return path[Math.max(0, path.length - 1 - LEVEL.aim)];
   }
 
   /**

@@ -303,14 +303,33 @@ export const POWER_UPS = Object.freeze({
 // Bot difficulty (chosen on the start screen, saved per device). Multipliers on bot behaviour:
 //   aggression: chance to start a chase · sense: how far they notice you · think: seconds between
 //   decisions (lower = faster reactions) · chase: how long they keep chasing · turn: turn rate ·
-//   playerBonus: extra interest in the human player · fight: fighting back (defend + grudge).
+//   speed: chase speed (x CHASE_THROTTLE, capped at full) · boost: boost earlier (x boostMin) ·
+//   playerBonus: extra interest in the human player · fight: fighting back (defend + grudge) ·
+//   expand: expansion drive · infight: how much bots go after OTHER bots (low = they gang up
+//   on you and grow big) · caution: how early an exposed bot runs home (x DANGER_RANGE) ·
+//   growth: how big a big empire's loops get (x LOOP_GROWTH_MAX) · beef: chance per decision that
+//   a bot you knocked out comes looking for you (anywhere on the map) · aim: how close behind
+//   your head they cut your trail (trail points; fewer = harder to outrun) · loops: size of each loop ·
+//   apex: a bot holding at least this % of the map turns predator (0 = off): it hunts and raids
+//   smaller bots (apexHunt x) and takes their land, so a few empires snowball · hunters: bots whose
+//   job is to track YOU down anywhere on the map · playerSense: how far bots notice you (x) ·
+//   playerFocus: every bot is willing to hunt you (ignores its cautious persona).
 export const DIFFICULTY = Object.freeze({
   DEFAULT: 'normal',
   STORAGE_KEY: 'crownloop.difficulty',
   LEVELS: Object.freeze({
-    easy: Object.freeze({ label: 'EASY', aggression: 0.5, sense: 0.8, think: 1.5, chase: 0.7, turn: 0.85, playerBonus: -0.1, fight: 0.4, expand: 0.7 }),
-    normal: Object.freeze({ label: 'NORMAL', aggression: 1, sense: 1, think: 1, chase: 1, turn: 1, playerBonus: 0, fight: 1, expand: 1 }),
-    hard: Object.freeze({ label: 'HARD', aggression: 1.45, sense: 1.3, think: 0.6, chase: 1.5, turn: 1.15, playerBonus: 0.15, fight: 1.3, expand: 1.25 }),
+    easy: Object.freeze({
+      label: 'EASY', aggression: 1, sense: 1, think: 1, chase: 1, turn: 1, speed: 1, boost: 1, playerBonus: 0,
+      fight: 1, expand: 1, infight: 1, caution: 1, growth: 1, loops: 1, apex: 0, apexHunt: 1, beef: 0.15, aim: 10, hunters: 0, playerSense: 1, playerFocus: false,
+    }),
+    normal: Object.freeze({
+      label: 'NORMAL', aggression: 1.45, sense: 1.3, think: 0.6, chase: 1.5, turn: 1.15, speed: 1.03, boost: 0.7,
+      playerBonus: 0.2, fight: 1.3, expand: 1.5, infight: 0.15, caution: 1.2, growth: 1.6, loops: 1.3, apex: 3.5, apexHunt: 1.2, beef: 0.45, aim: 7, hunters: 2, playerSense: 1.5, playerFocus: true,
+    }),
+    hard: Object.freeze({
+      label: 'HARD', aggression: 2.1, sense: 1.7, think: 0.35, chase: 2.4, turn: 1.3, speed: 1.08, boost: 0.35,
+      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.02, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
+    }),
   }),
 });
 
@@ -348,6 +367,8 @@ export const ENEMY = Object.freeze({
   DEFEND_CHANCE: 0.85, // per decision, scaled by difficulty
   GRUDGE_CHANCE: 0.7,
   GRUDGE_SENSE: 1.5, // the grudge target is noticed from this much farther
+  // Never run over its own trail: look this far ahead and turn away if the line would cross it.
+  SELF_TRAIL_LOOKAHEAD: 170,
   DANGER_RANGE: 650, // a rival this close while the bot's trail is open = run home
 
   MAX_CHASE_TIME: 3.5,
@@ -652,7 +673,7 @@ export const SCORE = Object.freeze({
 export const KING = Object.freeze({
   INDICATOR_COLOR: '#ffd34d',
   INDICATOR_HUE: 46,
-  MINIMUM_ARENA_PERCENT: 8, // share of the whole map required to be crowned (with the most territory)
+  MINIMUM_ARENA_PERCENT: 6, // share of the whole map required to be crowned (with the most territory)
   // Passes the crown at once; one cell of margin only stops flicker on an exact tie.
   TAKEOVER_MARGIN_CELLS: 1,
   TAKEOVER_MARGIN_RATIO: 0,
