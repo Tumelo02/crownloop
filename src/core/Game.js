@@ -1678,6 +1678,7 @@ export class Game {
   }
 
   render(dt = 0) {
+    this.adaptQuality(performance.now());
     const { ctx, camera, dpr } = this;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = RENDER.BACKGROUND;
@@ -1806,8 +1807,31 @@ export class Game {
     });
   }
 
+  /**
+   * Automatic quality: measures real frame time while playing; if the device can't keep up
+   * (average over RENDER.SLOW_FRAME_MS for RENDER.ADAPT_SECONDS), draws a step less sharp.
+   */
+  adaptQuality(now) {
+    // A long pause (hidden tab, an ad, a death screen) is not slowness: start measuring again.
+    const gap = now - (this.qualityLast || now);
+    this.qualityLast = now;
+    if (this.state !== GameState.PLAYING || document.hidden || gap > 250) { this.qualityClock = null; return; }
+    if (this.qualityClock == null) { this.qualityClock = now; this.qualityFrames = 0; return; }
+    this.qualityFrames++;
+    const elapsed = now - this.qualityClock;
+    if (elapsed < RENDER.ADAPT_SECONDS * 1000) return;
+    const avg = elapsed / this.qualityFrames;
+    this.qualityClock = now;
+    this.qualityFrames = 0;
+    const floor = Math.min(RENDER.MIN_PIXEL_RATIO, window.devicePixelRatio || 1);
+    if (avg > RENDER.SLOW_FRAME_MS && this.dpr > floor) {
+      this.qualityCap = Math.max(floor, this.dpr - RENDER.PIXEL_RATIO_STEP);
+      this.resize();
+    }
+  }
+
   resize() {
-    this.dpr = Math.min(window.devicePixelRatio || 1, RENDER.MAX_DEVICE_PIXEL_RATIO);
+    this.dpr = Math.min(window.devicePixelRatio || 1, RENDER.MAX_DEVICE_PIXEL_RATIO, this.qualityCap || Infinity);
     this.width = window.innerWidth;
     this.height = window.innerHeight;
     this.canvas.width = Math.round(this.width * this.dpr);

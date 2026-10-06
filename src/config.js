@@ -30,6 +30,12 @@ export const LOOP = Object.freeze({
 
 export const RENDER = Object.freeze({
   MAX_DEVICE_PIXEL_RATIO: 2,
+  // Automatic quality: if frames average slower than SLOW_FRAME_MS for ADAPT_SECONDS during play,
+  // drawing sharpness drops a step (down to MIN_PIXEL_RATIO). Fast devices never change.
+  SLOW_FRAME_MS: 26,
+  ADAPT_SECONDS: 2,
+  PIXEL_RATIO_STEP: 0.25,
+  MIN_PIXEL_RATIO: 1,
   // V10 arena: a light, calm, premium floor so elemental colours pop.
   BACKGROUND: '#070b18', // deep space beyond the arena's rim
   // (The floor colour itself is a theme: render/floorThemes.js, chosen in Settings.)

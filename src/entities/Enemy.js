@@ -304,10 +304,14 @@ export class Enemy extends Creature {
     }
 
     // Own trail ahead? Bend away from it (a good player never crosses their own line).
+    // (Re-checked every 3rd frame, ~10 times a second: plenty, and much cheaper.)
     if (this.isExposed && this.world) {
-      const turned = this.avoidOwnTrail(dx, dy);
-      dx = turned.x;
-      dy = turned.y;
+      this.avoidFrame = ((this.avoidFrame || 0) + 1) % 3;
+      if (this.avoidFrame === 0 || !this.avoidDir) this.avoidDir = this.avoidOwnTrail(dx, dy);
+      dx = this.avoidDir.x;
+      dy = this.avoidDir.y;
+    } else {
+      this.avoidDir = null;
     }
 
     // Slow into sharp turns (like a driver): a tighter circle, so it never orbits a nearby

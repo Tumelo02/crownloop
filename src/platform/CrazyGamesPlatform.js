@@ -299,11 +299,16 @@ export class CrazyGamesPlatform {
     this.callGameMethod('loadingStop');
   }
 
+  /** Tells CrazyGames gameplay started; never twice in a row (the SDK warns about repeats). */
   gameplayStart() {
+    if (this.gameplayActive) return;
+    this.gameplayActive = true;
     this.callGameMethod('gameplayStart');
   }
 
   gameplayStop() {
+    if (!this.gameplayActive) return;
+    this.gameplayActive = false;
     this.callGameMethod('gameplayStop');
   }
 

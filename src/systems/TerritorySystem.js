@@ -318,14 +318,36 @@ export class TerritorySystem {
     for (const creature of creatures) {
       if (creature.alive) bySlot[creature.slot] = creature;
     }
+    // Bounding box of every open trail, once per frame: a creature far from a trail's box
+    // can't touch it, so the expensive per-segment test is skipped (same results, far less work).
+    const box = this.trailBoxes || (this.trailBoxes = new Float64Array(TERRITORY.MAX_SLOTS * 4));
+    for (let slot = 1; slot < TERRITORY.MAX_SLOTS; slot++) {
+      const path = this.trailPaths[slot];
+      let x0 = Infinity; let y0 = Infinity; let x1 = -Infinity; let y1 = -Infinity;
+      for (let i = 0; i < path.length; i++) {
+        const pt = path[i];
+        if (pt.x < x0) x0 = pt.x;
+        if (pt.x > x1) x1 = pt.x;
+        if (pt.y < y0) y0 = pt.y;
+        if (pt.y > y1) y1 = pt.y;
+      }
+      box[slot * 4] = x0; box[slot * 4 + 1] = y0; box[slot * 4 + 2] = x1; box[slot * 4 + 3] = y1;
+    }
+    const reach = TERRITORY.TRAIL_WARNING_DISTANCE + TERRITORY.TRAIL_WIDTH + TERRITORY.TRAIL_OUTLINE_WIDTH;
 
     for (const creature of creatures) {
       creature.nearOwnTrail = false;
       if (!creature.alive) continue;
+      const pad = reach + creature.radius;
+      const cx0 = Math.min(creature.previousX, creature.x) - pad;
+      const cx1 = Math.max(creature.previousX, creature.x) + pad;
+      const cy0 = Math.min(creature.previousY, creature.y) - pad;
+      const cy1 = Math.max(creature.previousY, creature.y) + pad;
       for (let slot = 1; slot < TERRITORY.MAX_SLOTS; slot++) {
         const path = this.trailPaths[slot];
         const owner = bySlot[slot];
         if (path.length < 2 || !owner) continue;
+        if (box[slot * 4 + 2] < cx0 || box[slot * 4] > cx1 || box[slot * 4 + 3] < cy0 || box[slot * 4 + 1] > cy1) continue;
         const selfTrail = creature === owner;
         const ownerCell = this.indexAt(owner.x, owner.y);
         const ownerReturned = this.owners[ownerCell] === slot;
@@ -420,9 +442,16 @@ export class TerritorySystem {
     if (end < 1) return false;
     const closest = { x: 0, y: 0 };
     const r2 = radius * radius;
+    const left = Math.min(x0, x1) - radius;
+    const right = Math.max(x0, x1) + radius;
+    const top = Math.min(y0, y1) - radius;
+    const bottom = Math.max(y0, y1) + radius;
     for (let i = 0; i < end; i++) {
       const a = path[i];
       const b = path[i + 1];
+      // Segments nowhere near the move can't touch it (cheap test before the exact one).
+      if (Math.max(a.x, b.x) < left || Math.min(a.x, b.x) > right
+        || Math.max(a.y, b.y) < top || Math.min(a.y, b.y) > bottom) continue;
       if (closestSegmentPoints(x0, y0, x1, y1, a.x, a.y, b.x, b.y, closest) <= r2) return true;
     }
     return false;

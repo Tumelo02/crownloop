@@ -555,3 +555,14 @@ Every creature is driven only through `setIntent(x, y, throttle)`. Local input, 
   creatures get a frost ring with circling snowflakes.
 - How to Play: new BOOST & POWER-UPS tab (energy dots, boosting, the five power-ups); LANDMARKS tab rewritten.
 - HARD `infight` 0.2: a bot King appeared in every simulated Hard match (3-7 crown changes).
+
+## Release (CrazyGames)
+
+- Performance: trail-cut checks skip trails whose bounding box is out of reach (`findTrailCuts`, same results,
+  game logic ~10x cheaper), bots re-check their turning arc every 3rd frame, and automatic quality
+  (`RENDER.SLOW_FRAME_MS`) lowers drawing sharpness on slow devices. A full 8-minute Hard match from the release zip
+  runs with no errors and flat memory (~9 MB).
+- `gameplayStart` / `gameplayStop` are never sent twice in a row (the SDK warns about repeats).
+- `store-assets/`: covers (1920x1080, 800x1200, 800x800), logo emblem and icon, and 1920x1080 screenshots, all
+  rendered with the game's own drawing code. CRAZYGAMES_SUBMISSION.md has every form answer.
+- `npm run package` builds `crownloop-crazygames.zip` (3 files, ~160 KB).

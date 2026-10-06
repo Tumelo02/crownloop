@@ -3,10 +3,9 @@ node_modules/
 dist/
 *.zip
 
-# Local test leftovers
-.playwright-mcp/
-.landmark-*.mjs
+# Local files
 smooth.png
+store-assets/*.tmp
 
 # Third-party reference copy (CrazyGames documentation)
 CrazyGames Doc.txt
