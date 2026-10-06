@@ -2934,3 +2934,11 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
   .store-tabs .ranking-cat { padding: 9px 6px 10px; font-size: 10px; letter-spacing: 0.06em; }
   .ranking-periods { flex-wrap: wrap; }
 }
+/* Guide: BOOST & POWER-UPS */
+.guide-icon[data-guide="boost"] { --g1: #6ff0ff; --g2: #1d8fd6; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M13.5 1.5 4 13.5h6.2L9 22.5l10-12.6h-6.3z'/%3E%3C/svg%3E"); }
+.guide-icon[data-guide="powerups"] { --g1: #ff9ad6; --g2: #b23cc9; --icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill-rule='evenodd' d='M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20zm1.3 3.5-6 8.2h4.2l-.8 4.8 6-8.2h-4.2z'/%3E%3C/svg%3E"); }
+.guide-pu { list-style: none; padding-left: 0; gap: 8px; font-size: 14px; }
+.guide-pu li { display: flex; align-items: center; gap: 8px; }
+.guide-pu .pu-icon { width: 26px; height: 26px; }
+.guide-pu b { min-width: 74px; color: var(--text) !important; letter-spacing: 0.06em; }
+

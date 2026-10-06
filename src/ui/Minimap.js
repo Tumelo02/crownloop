@@ -164,7 +164,7 @@ export class Minimap {
     ctx.clip();
     for (const lm of landmarks) {
       const was = this.landmarkActive.get(lm);
-      if (lm.active && was === false) this.landmarkPings.set(lm, this.time);
+      if (lm.active && was === false && lm.ownerSlot && lm.ownerSlot === playerSlot) this.landmarkPings.set(lm, this.time);
       this.landmarkActive.set(lm, Boolean(lm.active));
       const ping = this.landmarkPings.get(lm);
       const age = ping === undefined ? Infinity : this.time - ping;

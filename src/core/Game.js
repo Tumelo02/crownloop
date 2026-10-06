@@ -28,7 +28,9 @@ import { FluxCoreSystem } from '../systems/FluxCoreSystem.js';
 import { RiftSystem } from '../systems/RiftSystem.js';
 import { StasisSystem } from '../systems/StasisSystem.js';
 import { StrategicLandmarkManager } from '../systems/StrategicLandmarkManager.js';
-import { drawRiftArrivals, warmLandmarkRenderers, drawLandmarkPlate } from '../render/StrategicLandmarkRenderer.js';
+import {
+  drawFrostOn, drawLandmarkPlate, drawRiftArrivals, warmLandmarkRenderers,
+} from '../render/StrategicLandmarkRenderer.js';
 import { ElementalEffects } from '../systems/ElementalEffects.js';
 import { CombatEffectManager } from '../systems/CombatEffects.js';
 import { CaptureWaves } from '../render/captureWaves.js';
@@ -50,6 +52,7 @@ import { ThemeToggle } from '../ui/ThemeToggle.js';
 import { WheelPanel } from '../ui/WheelPanel.js';
 import { HowToPanel } from '../ui/HowToPanel.js';
 import { AccountName } from '../ui/AccountName.js';
+import { resetLandmarkLayout } from '../world/nodePlacement.js';
 import { DifficultyPicker } from '../ui/DifficultyPicker.js';
 import { setBotDifficulty } from '../entities/Enemy.js';
 import { shareGame } from '../ui/share.js';
@@ -122,12 +125,20 @@ function shuffled(items) {
 }
 
 /** Composition root: owns the current world, wires systems together, runs update/render. */
-/** Banner + sound when a landmark near you (or yours) switches on. */
+/** What capturing each landmark gives you (shown when you take it). */
+const CAPTURE_PERKS = Object.freeze({
+  beacon: 'Your points are doubled everywhere while you keep it',
+  flux: 'It fills your boost every few seconds while it is ON',
+  rift: 'Only you can use it now: step in to jump to your border',
+  stasis: 'Rivals in its ring move slower; you do not',
+});
+
+/** Banner + sound when one of YOUR landmarks switches on. */
 const LANDMARK_ANNOUNCE = Object.freeze({
-  beacon: { title: 'BONUS TOWER IS ON', sub: 'Land you capture in its ring scores double', sound: 'claimBeacon' },
-  flux: { title: 'ENERGY CORE IS ON', sub: 'It sprays free energy every few seconds', sound: 'fluxCoreOnline' },
-  rift: { title: 'TELEPORTER IS OPEN', sub: 'Step in (trail closed) to jump to your border', sound: 'riftOnline' },
-  stasis: { title: 'SLOW TOWER IS ON', sub: 'Rivals in its ring move 35% slower (not you)', sound: 'stasisOnline' },
+  beacon: { title: 'BONUS TOWER', sub: 'Double points everywhere while you own it', sound: 'claimBeacon' },
+  flux: { title: 'ENERGY CORE IS ON', sub: 'It fills your boost every few seconds', sound: 'fluxCoreOnline' },
+  rift: { title: 'TELEPORTER IS OPEN', sub: 'Only you can use it: step in to jump to your border', sound: 'riftOnline' },
+  stasis: { title: 'SLOW TOWER IS ON', sub: 'Rivals in its ring move 35% slower', sound: 'stasisOnline' },
 });
 
 export class Game {
@@ -435,6 +446,7 @@ export class Game {
     this.input.setEnabled(false);
     this.input.reset();
     this.territory.reset();
+    resetLandmarkLayout();
     this.claimBeacon.reset(this.territory);
     this.fluxCore.reset(this.territory);
     this.rift.reset(this.territory);
@@ -727,8 +739,8 @@ export class Game {
           this.audio.play('landmarkClaim');
           if (this.time - this.lastLandmarkClaimAt >= LANDMARKS.CLAIM_ANNOUNCE_COOLDOWN) {
             this.lastLandmarkClaimAt = this.time;
-            this.announcer.show(`${event.label} CAPTURED`, 'It is now part of your territory',
-              AnnounceStyle.SURGE, 1.6);
+            this.announcer.show(`${event.label} CAPTURED`, CAPTURE_PERKS[event.kind] || 'It is now part of your territory',
+              AnnounceStyle.SURGE, 1.8);
           }
         }
       } else if (event.previous === this.local?.slot) {
@@ -860,6 +872,8 @@ export class Game {
       this.territory.conquer(victim.slot, killer.slot, COMBAT.CONQUEST_FRACTION, victim.x, victim.y);
     }
     if (killerSeat && killerSeat !== victimSeat) killerSeat.kills++;
+    // Bonus Tower owner: a knockout is worth double too.
+    if (killer !== victim && this.claimBeacon.owns(killer.slot)) killer.bonusScore += SCORE.PER_ELIMINATION;
     // A bot remembers who knocked it out and goes after them next life.
     if (victimSeat && !victim.isPlayer && killer !== victim) victimSeat.grudgeSlot = killer.slot;
     if (victimSeat) {
@@ -1137,8 +1151,18 @@ export class Game {
         this.particles.emit(core.x, core.y, FLUX_CORE.HUE, PARTICLES.SURGE, 0.9);
       }
     }
+    for (const slot of this.fluxCore.ownerPulses) {
+      const owner = this.roster.get(slot)?.creature;
+      if (!owner || !owner.alive) continue;
+      const gained = owner.addEnergy(FLUX_CORE.OWNER_ENERGY);
+      if (owner.isPlayer && gained > 0) {
+        this.effects.popup(0, 0, `+${Math.round(gained)} BOOST · ENERGY CORE`, `hsl(${FLUX_CORE.HUE}, 100%, 66%)`, {
+          anchor: owner, sizePx: 15, life: 1.2, rise: 40,
+        });
+      }
+    }
     this.rift.update(dt);
-    this.stasis.update(dt, this.territory, this.creatures, this.player);
+    this.stasis.update(dt, this.territory, this.creatures);
     this.announceLandmarks(dt);
 
     const player = this.player;
@@ -1182,7 +1206,7 @@ export class Game {
 
     this.energy.update(dt);
     for (const capture of this.territory.update(dt, this.creatures)) {
-      const beaconBonus = this.claimBeacon.recordCapture(capture, this.territory, this.local.slot);
+      const beaconBonus = this.claimBeacon.recordCapture(capture);
       const creature = this.roster.get(capture.slot)?.creature;
       if (creature && beaconBonus > 0) creature.bonusScore += beaconBonus * SCORE.PER_CELL;
       if (creature) this.events.emit(GameEvent.TERRITORY_CAPTURED, { creature, capture });
@@ -1484,10 +1508,7 @@ export class Game {
     messages.forEach((text, i) => setTimeout(() => showMenuToast(text), 900 + i * 4200));
   }
 
-  /**
-   * A landmark that just switched ON is announced when it matters to you: within
-   * LANDMARKS.ANNOUNCE_RANGE, or yours. Everyone still sees it ripple on the minimap.
-   */
+  /** A landmark that just switched ON is announced to its OWNER only (you, if you captured it). */
   announceLandmarks(dt) {
     this.landmarkAnnounceGap = Math.max(0, (this.landmarkAnnounceGap || 0) - dt);
     const player = this.player;
@@ -1496,13 +1517,12 @@ export class Game {
       lm.wasOn = Boolean(lm.active);
       if (!switchedOn || this.state !== GameState.PLAYING || !player || !player.alive) continue;
       const yours = lm.ownerSlot && lm.ownerSlot === this.local.slot;
-      const near = Math.hypot(lm.x - player.x, lm.y - player.y) <= LANDMARKS.ANNOUNCE_RANGE;
-      if ((!yours && !near) || this.landmarkAnnounceGap > 0) continue;
+      if (!yours || this.landmarkAnnounceGap > 0) continue;
       const text = LANDMARK_ANNOUNCE[lm.kind];
       if (!text) continue;
       this.landmarkAnnounceGap = LANDMARKS.ANNOUNCE_GAP;
       this.audio.play(text.sound);
-      this.announcer.show(yours ? `YOUR ${text.title}` : text.title, text.sub, AnnounceStyle.SURGE, 1.8);
+      this.announcer.show(`YOUR ${text.title}`, text.sub, AnnounceStyle.SURGE, 1.8);
     }
   }
 
@@ -1738,8 +1758,16 @@ export class Game {
         ctx.globalAlpha = 1;
       }
     }
-    // Name plates: what each landmark is, does, and when it is ON (above everything else).
-    for (const st of structures) drawLandmarkPlate(ctx, st.lm, zoom, this.local ? this.local.slot : 0);
+    // Slowed by a Slow Tower: frost at their feet and snowflakes circling them.
+    for (const creature of visible) {
+      if (creature.alive && creature.environmentSpeedMultiplier < 1) drawFrostOn(ctx, creature, this.time, zoom);
+    }
+    // Name plates: small, and faded while you stand right on the landmark.
+    for (const st of structures) {
+      const me = view.viewer;
+      const near = Boolean(me && Math.abs(me.x - st.lm.x) < 140 && Math.abs(me.y - st.lm.y - 30) < 90);
+      drawLandmarkPlate(ctx, st.lm, zoom, this.local ? this.local.slot : 0, near);
+    }
     this.combat.drawStates(ctx, visible, zoom, this.time);
     if (view.viewer && this.exposure > 0.01) {
       drawExposureCue(ctx, this.player, (this.player.character || skinById('core')).palette.primary,

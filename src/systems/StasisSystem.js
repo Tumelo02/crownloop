@@ -1,7 +1,7 @@
 import { STASIS, STRATEGIC_LANDMARKS } from '../config.js';
 import { distSq } from '../utils/math.js';
 import { createStrategicLandmarks } from '../world/nodePlacement.js';
-import { drawLandmarkBoundary, drawLandmarkZone, drawStasisStructure } from '../render/StrategicLandmarkRenderer.js';
+import { drawLandmarkBoundary, drawLandmarkZone, drawStasisStructure, drawSnowField } from '../render/StrategicLandmarkRenderer.js';
 
 const SLOW_RGB = [120, 175, 255];
 
@@ -35,7 +35,7 @@ export class StasisSystem {
   }
 
   /** Each tower cycles ON/OFF on its own clock (other landmarks never pause it). */
-  update(dt, territory, creatures, localPlayer = null) {
+  update(dt, territory, creatures) {
     if (!this.landmarks.length) return null;
 
     let event = null;
@@ -61,16 +61,17 @@ export class StasisSystem {
       if (field.active) nowActive.push(field);
     }
     this.active = nowActive.find((field) => field && field.active) || null;
-    this.apply(creatures, localPlayer);
+    this.apply(creatures);
     return event;
   }
 
-  apply(creatures, localPlayer = null) {
+  /** Everyone inside an ON Slow Tower's ring moves slower, except the tower's owner. */
+  apply(creatures) {
     const radiusSquared = STASIS.SLOW_RADIUS ** 2;
     for (const creature of creatures) {
       let affected = false;
       for (const field of this.landmarks) {
-        if (!field.active || !creature.alive || creature === localPlayer) continue;
+        if (!field.active || !creature.alive || creature.slot === field.ownerSlot) continue;
         if (distSq(creature.x, creature.y, field.x, field.y) <= radiusSquared) {
           affected = true;
           break;
@@ -97,6 +98,7 @@ export class StasisSystem {
     for (const lm of this.landmarks) {
       if (!this.inView(lm, bounds)) continue;
       drawLandmarkZone(ctx, lm, time, STASIS.SLOW_RADIUS, lm.active, SLOW_RGB);
+      if (lm.active) drawSnowField(ctx, lm, time, STASIS.SLOW_RADIUS);
     }
   }
 

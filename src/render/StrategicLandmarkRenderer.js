@@ -1213,12 +1213,11 @@ export function drawStasisStructure(ctx, lm, time) {
 
 // ---------------------------------------------------------------- name plates
 
-/** What each landmark is and does, in plain words (shown under it in the world). */
 const PLATES = Object.freeze({
-  beacon: { name: 'BONUS TOWER', on: 'ON', off: 'OFF', effect: '2× score for land captured in its ring', color: '#5ff3ff' },
-  flux: { name: 'ENERGY CORE', on: 'ON', off: 'OFF', effect: 'Sprays free energy every 6 s', color: '#ffae4d' },
-  rift: { name: 'TELEPORTER', on: 'OPEN', off: 'SHUT', effect: 'Trail closed? Step in: jump to your border', color: '#c18cff' },
-  stasis: { name: 'SLOW TOWER', on: 'ON', off: 'OFF', effect: 'Rivals in its ring move 35% slower', color: '#7fb6ff' },
+  beacon: { name: 'BONUS TOWER', color: '#5ff3ff' },
+  flux: { name: 'ENERGY CORE', color: '#ffae4d' },
+  rift: { name: 'TELEPORTER', color: '#c18cff' },
+  stasis: { name: 'SLOW TOWER', color: '#7fb6ff' },
 });
 
 function clockText(seconds) {
@@ -1227,69 +1226,107 @@ function clockText(seconds) {
 }
 
 /**
- * A readable plate under a landmark: name, what it does, and its status
- * (ON 0:25 / OFF 0:41, or OPEN / SHUT for the Teleporter), plus YOURS when you own it.
- * Drawn at a constant on-screen size, above the creatures.
+ * A small one-line plate under a landmark: its name and its state. Bonus Towers show who owns
+ * them (FREE / TAKEN / YOURS); the others show ON 0:25 / OFF 0:41 (OPEN / SHUT for the
+ * Teleporter), plus YOURS when you own it. Constant on-screen size, faded when you stand on it.
  */
-export function drawLandmarkPlate(ctx, lm, zoom, localSlot) {
+export function drawLandmarkPlate(ctx, lm, zoom, localSlot, near = false) {
   const plate = PLATES[lm.kind];
   if (!plate) return;
-  const on = Boolean(lm.active);
-  const left = on ? (lm.remaining ?? lm.activeTimer ?? 0) : (lm.cooldown ?? 0);
   const yours = Boolean(lm.ownerSlot && lm.ownerSlot === localSlot);
+  let status;
+  let lit;
+  if (lm.kind === 'beacon') {
+    status = yours ? 'YOURS · 2× POINTS' : lm.ownerSlot ? 'TAKEN' : 'FREE · CAPTURE IT';
+    lit = !lm.ownerSlot || yours;
+  } else {
+    const on = Boolean(lm.active);
+    const left = on ? (lm.remaining ?? lm.activeTimer ?? 0) : (lm.cooldown ?? 0);
+    status = `${on ? (lm.kind === 'rift' ? 'OPEN' : 'ON') : (lm.kind === 'rift' ? 'SHUT' : 'OFF')} ${clockText(left)}`;
+    if (yours) status += ' · YOURS';
+    lit = on;
+  }
   ctx.save();
   ctx.translate(lm.x, lm.y);
   ctx.scale(1 / zoom, 1 / zoom);
-  ctx.translate(0, 26);
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.translate(0, 18);
+  if (near) ctx.globalAlpha = 0.35;
   const font = '"Segoe UI", system-ui, sans-serif';
-
-  const status = `${on ? plate.on : plate.off} ${clockText(left)}`;
-  ctx.font = `900 13px ${font}`;
+  ctx.textBaseline = 'middle';
+  ctx.font = `900 10px ${font}`;
   const nameW = ctx.measureText(plate.name).width;
-  ctx.font = `800 10px ${font}`;
-  const statusW = ctx.measureText(status).width + 12;
-  const yoursW = yours ? ctx.measureText('YOURS').width + 12 : 0;
-  ctx.font = `700 11px ${font}`;
-  const effectW = ctx.measureText(plate.effect).width;
-  const topW = nameW + 8 + statusW + (yours ? 6 + yoursW : 0);
-  const w = Math.max(topW, effectW) + 22;
-  const h = 40;
-
-  // Card
-  roundRectPath(ctx, -w / 2, 0, w, h, 10);
-  ctx.fillStyle = 'rgba(8, 12, 24, 0.82)';
+  ctx.font = `800 9px ${font}`;
+  const statusW = ctx.measureText(status).width;
+  const w = nameW + statusW + 26;
+  const h = 18;
+  roundRectPath(ctx, -w / 2, 0, w, h, 9);
+  ctx.fillStyle = 'rgba(8, 12, 24, 0.7)';
   ctx.fill();
-  ctx.lineWidth = 1.5;
-  ctx.strokeStyle = on ? plate.color : 'rgba(255, 255, 255, 0.18)';
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = yours ? 'rgba(255, 255, 255, 0.85)' : 'rgba(255, 255, 255, 0.14)';
   ctx.stroke();
-
-  // Top row: NAME [STATUS] [YOURS]
-  let x = -topW / 2;
   ctx.textAlign = 'left';
-  ctx.font = `900 13px ${font}`;
+  ctx.font = `900 10px ${font}`;
   ctx.fillStyle = plate.color;
-  ctx.fillText(plate.name, x, 13);
-  x += nameW + 8;
-  roundRectPath(ctx, x, 5, statusW, 16, 8);
-  ctx.fillStyle = on ? 'rgba(95, 227, 90, 0.95)' : 'rgba(255, 255, 255, 0.16)';
-  ctx.fill();
-  ctx.font = `800 10px ${font}`;
-  ctx.fillStyle = on ? '#062b10' : 'rgba(232, 241, 255, 0.85)';
-  ctx.fillText(status, x + 6, 13.5);
-  if (yours) {
-    x += statusW + 6;
-    roundRectPath(ctx, x, 5, yoursW, 16, 8);
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.92)';
-    ctx.fill();
-    ctx.fillStyle = '#0b1424';
-    ctx.fillText('YOURS', x + 6, 13.5);
+  ctx.fillText(plate.name, -w / 2 + 9, h / 2 + 0.5);
+  ctx.font = `800 9px ${font}`;
+  ctx.fillStyle = lit ? 'rgba(170, 255, 160, 0.95)' : 'rgba(232, 241, 255, 0.55)';
+  ctx.fillText(status, -w / 2 + 17 + nameW, h / 2 + 0.5);
+  ctx.restore();
+}
+
+// ---------------------------------------------------------------- slow effects
+
+const SNOW = 'rgba(225, 242, 255, ';
+
+/** Snow drifting inside an ON Slow Tower's ring: you can see where you will be slowed. */
+export function drawSnowField(ctx, lm, time, radius) {
+  const seed = seedOf(lm);
+  ctx.save();
+  for (let i = 0; i < 42; i++) {
+    const a = hashRand(seed, i) * Math.PI * 2;
+    const r = Math.sqrt(hashRand(seed, i + 50)) * radius;
+    const fall = (time * (14 + 10 * hashRand(seed, i + 9)) + hashRand(seed, i + 3) * 60) % 60;
+    const x = lm.x + Math.cos(a) * r + Math.sin(time * 0.8 + i) * 6;
+    const y = lm.y + Math.sin(a) * r * 0.9 + fall - 30;
+    const k = 1 - Math.abs(fall - 30) / 30; // fades in and out
+    ctx.fillStyle = `${SNOW}${(0.4 + 0.5 * k).toFixed(3)})`;
+    snowflake(ctx, x, y, 3 + 3 * hashRand(seed, i + 77));
   }
-  // Second row: what it does
-  ctx.textAlign = 'center';
-  ctx.font = `700 11px ${font}`;
-  ctx.fillStyle = on ? 'rgba(232, 241, 255, 0.95)' : 'rgba(232, 241, 255, 0.6)';
-  ctx.fillText(plate.effect, 0, 30);
+  ctx.restore();
+}
+
+/** A slowed creature: an icy ring at its feet and snowflakes circling it. */
+export function drawFrostOn(ctx, creature, time, zoom) {
+  const r = creature.radius;
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(creature.x, creature.y + r * 0.55, r * 1.25, r * 0.5, 0, 0, Math.PI * 2);
+  ctx.strokeStyle = 'rgba(160, 220, 255, 0.75)';
+  ctx.lineWidth = Math.max(1.5, 2.5 / Math.max(zoom, 0.5));
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(160, 220, 255, 0.14)';
+  ctx.fill();
+  for (let i = 0; i < 5; i++) {
+    const a = time * 1.6 + (i / 5) * Math.PI * 2;
+    ctx.fillStyle = `${SNOW}0.9)`;
+    snowflake(ctx, creature.x + Math.cos(a) * r * 1.35, creature.y - r * 0.2 + Math.sin(a) * r * 0.75, 3.2);
+  }
+  ctx.restore();
+}
+
+function snowflake(ctx, x, y, size) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.strokeStyle = ctx.fillStyle;
+  ctx.lineWidth = Math.max(0.8, size * 0.32);
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let k = 0; k < 3; k++) {
+    const a = (k / 3) * Math.PI;
+    ctx.moveTo(Math.cos(a) * size, Math.sin(a) * size);
+    ctx.lineTo(-Math.cos(a) * size, -Math.sin(a) * size);
+  }
+  ctx.stroke();
   ctx.restore();
 }

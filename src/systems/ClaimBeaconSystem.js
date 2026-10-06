@@ -1,9 +1,7 @@
 import { CLAIM_BEACON, STRATEGIC_LANDMARKS, TERRITORY } from '../config.js';
 import { createStrategicLandmarks } from '../world/nodePlacement.js';
-import { hslToRgb } from '../utils/math.js';
-import { drawClaimBeacon, drawLandmarkBoundary, drawLandmarkZone } from '../render/StrategicLandmarkRenderer.js';
+import { drawClaimBeacon, drawLandmarkBoundary } from '../render/StrategicLandmarkRenderer.js';
 
-const BEACON_RGB = hslToRgb(CLAIM_BEACON.HUE, 0.85, 0.6);
 
 /**
  * Claim Beacons are permanent strategic landmarks; they remain in the world and
@@ -41,56 +39,27 @@ export class ClaimBeaconSystem {
   }
 
   /** Each tower cycles ON/OFF on its own clock (other landmarks never pause it). */
-  update(dt) {
-    if (!this.landmarks.length) return null;
-    let event = null;
-    const activeNow = [];
-    for (const beacon of this.landmarks) {
-      if (beacon.active) {
-        beacon.remaining -= dt;
-        if (beacon.remaining <= 0) {
-          beacon.active = false;
-          beacon.cooldown = CLAIM_BEACON.COOLDOWN;
-          beacon.remaining = 0;
-          event = 'expired';
-        }
-      } else {
-        beacon.cooldown -= dt;
-        if (beacon.cooldown <= 0) {
-          beacon.active = true;
-          beacon.remaining = CLAIM_BEACON.ACTIVE_DURATION;
-          beacon.cooldown = 0;
-          event = 'spawned';
-        }
-      }
-      if (beacon.active) activeNow.push(beacon);
-    }
-    this.active = activeNow[0] || null;
-    return event;
+  /** Bonus Towers are always ON: what matters is who owns one. */
+  update() {
+    for (const beacon of this.landmarks) beacon.active = true;
+    this.active = this.landmarks[0] || null;
+    return null;
   }
 
-  recordCapture(capture, territory, localSlot) {
-    if (!this.landmarks.length || !capture.cells.length) return 0;
-    const radiusSq = CLAIM_BEACON.INFLUENCE_RADIUS ** 2;
-    let totalExtra = 0;
-    for (const beacon of this.landmarks) {
-      if (!beacon.active) continue; // the bonus only works while the tower is online
-      let qualifying = 0;
-      for (const index of capture.cells) {
-        const col = index % territory.cols;
-        const row = (index - col) / territory.cols;
-        const x = (col + 0.5) * territory.cellSize;
-        const y = (row + 0.5) * territory.cellSize;
-        const dx = x - beacon.x;
-        const dy = y - beacon.y;
-        if (dx * dx + dy * dy <= radiusSq) qualifying++;
-      }
-      if (!qualifying) continue;
-      const extraValue = qualifying * (CLAIM_BEACON.CAPTURE_VALUE_MULTIPLIER - 1); // same for everyone
-      this.bonusCounts[capture.slot] += extraValue;
-      totalExtra += extraValue;
-    }
-    return totalExtra;
+  /** True when this slot owns at least one Bonus Tower. */
+  owns(slot) {
+    return slot > 0 && this.landmarks.some((beacon) => beacon.ownerSlot === slot);
+  }
+
+  /**
+   * Owning a Bonus Tower doubles the score of every capture you make, anywhere on the map
+   * (owning two is still double). Returns the extra cells' worth of score.
+   */
+  recordCapture(capture) {
+    if (!capture.cells.length || !this.owns(capture.slot)) return 0;
+    const extraValue = capture.count * (CLAIM_BEACON.CAPTURE_VALUE_MULTIPLIER - 1);
+    this.bonusCounts[capture.slot] += extraValue;
+    return extraValue;
   }
 
   /** Delegates to the shared pseudo-3D landmark renderer (structure + claimed boundary). */
@@ -105,13 +74,8 @@ export class ClaimBeaconSystem {
     }
   }
 
-  /** Ground layer: the double-value area (exact bonus radius), only while the tower is online. */
-  drawGround(ctx, time, zoom, bounds) {
-    for (const lm of this.landmarks) {
-      if (!this.inView(lm, bounds)) continue;
-      drawLandmarkZone(ctx, lm, time, CLAIM_BEACON.INFLUENCE_RADIUS, lm.active, BEACON_RGB);
-    }
-  }
+  /** No ground zone: the bonus works everywhere for the owner. */
+  drawGround() {}
 
   /**
    * The standing structures, for the depth-sorted pass with the creatures: each one is

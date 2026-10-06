@@ -1,6 +1,12 @@
-import { ENEMY, WORLD } from '../config.js';
+import { ENEMY, LANDMARKS, WORLD } from '../config.js';
 import { distSq } from '../utils/math.js';
 import { insideArena, randomArenaPoint } from './arena.js';
+
+/** Every landmark placed this match (all kinds), so the kinds scatter instead of clustering. */
+const layout = [];
+export function resetLandmarkLayout() {
+  layout.length = 0;
+}
 
 export function createStrategicLandmarks(territory, count, radius, minDistance = 600, attempts = 220) {
   const placements = [];
@@ -12,7 +18,10 @@ export function createStrategicLandmarks(territory, count, radius, minDistance =
       randomArenaPoint(safeMargin, candidate);
       if (territory.ownerAt(candidate.x, candidate.y) !== 0) continue;
       if (!insideArena(candidate.x, candidate.y, safeMargin)) continue;
-      const conflicts = placements.some((other) => distSq(candidate.x, candidate.y, other.x, other.y) < minDistance ** 2);
+      const conflicts = placements.some((other) => distSq(candidate.x, candidate.y, other.x, other.y) < minDistance ** 2)
+        // Strict for most of the tries, then relaxed so a crowded map still finds a spot.
+        || layout.some((other) => distSq(candidate.x, candidate.y, other.x, other.y)
+          < (LANDMARKS.SPREAD_MIN * (attempt < attempts * 0.75 ? 1 : 0.6)) ** 2);
       if (conflicts) continue;
       point = candidate;
       break;
@@ -33,6 +42,7 @@ export function createStrategicLandmarks(territory, count, radius, minDistance =
       point = { x: WORLD.WIDTH / 2 + (i - count / 2) * 280, y: WORLD.HEIGHT / 2 + (i % 2 ? -220 : 220) };
     }
     placements.push(point);
+    layout.push(point);
   }
   return placements;
 }

@@ -4,6 +4,7 @@ import { traceOutline } from '../render/territoryShapes.js';
 import { drawCrown } from '../render/sprites.js';
 import { KING } from '../config.js';
 import { MenuSheet } from './MenuPanels.js';
+import { powerUpIcon } from './icons.js';
 
 /**
  * HOW TO PLAY: an illustrated, looping guide in four little arena scenes, each acted out by
@@ -101,6 +102,7 @@ export class HowToPanel extends MenuSheet {
     this.tabs = [...this.modal.querySelectorAll('[data-howto-tab]')];
     this.sections = [...this.modal.querySelectorAll('[data-howto-section]')];
     for (const tab of this.tabs) tab.addEventListener('click', () => this.show(tab.dataset.howtoTab));
+    for (const slot of this.modal.querySelectorAll('[data-pu-icon]')) slot.replaceWith(powerUpIcon(slot.dataset.puIcon));
     document.getElementById('howto-try')?.addEventListener('click', () => {
       this.toggle(false);
       onTry();

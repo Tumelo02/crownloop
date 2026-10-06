@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <meta name="theme-color" content="#020308">
   <title>Crownloop</title>
-  <link rel="stylesheet" href="styles.css?v=20261007-1">
+  <link rel="stylesheet" href="styles.css?v=20261007-2">
   <script>try { if (localStorage.getItem('dominion.theme') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}</script>
   <script defer src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
 </head>
@@ -215,6 +215,7 @@
         </header>
         <nav class="store-tabs howto-tabs" role="tablist" aria-label="How to play sections">
           <button class="store-tab active" type="button" role="tab" aria-selected="true" data-howto-tab="basics">THE BASICS</button>
+          <button class="store-tab" type="button" role="tab" aria-selected="false" data-howto-tab="boost">BOOST &amp; POWER-UPS</button>
           <button class="store-tab" type="button" role="tab" aria-selected="false" data-howto-tab="score">SCORE &amp; COINS</button>
           <button class="store-tab" type="button" role="tab" aria-selected="false" data-howto-tab="territory">TERRITORY</button>
           <button class="store-tab" type="button" role="tab" aria-selected="false" data-howto-tab="landmarks">LANDMARKS</button>
@@ -275,24 +276,47 @@
               </article>
             </div>
           </section>
+          <section class="howto-section" data-howto-section="boost" hidden>
+            <div class="guide-grid">
+              <article class="guide-card">
+                <h3 class="guide-title"><span class="guide-icon" data-guide="boost" aria-hidden="true"></span>BOOST</h3>
+                <ul class="guide-list guide-simple">
+                  <li>Eat the glowing blue dots. They fill your boost bar.</li>
+                  <li>Hold click, Space or the BOOST button = go fast.</li>
+                  <li>Boosting empties the bar. Eat more dots to fill it.</li>
+                </ul>
+              </article>
+              <article class="guide-card">
+                <h3 class="guide-title"><span class="guide-icon" data-guide="powerups" aria-hidden="true"></span>POWER-UPS</h3>
+                <ul class="guide-list guide-pu">
+                  <li><span data-pu-icon="surge"></span><b>SPEED</b> Go super fast.</li>
+                  <li><span data-pu-icon="magnet"></span><b>MAGNET</b> Pulls energy to you.</li>
+                  <li><span data-pu-icon="tracker"></span><b>TRACKER</b> Shows rivals with an open line.</li>
+                  <li><span data-pu-icon="zoom"></span><b>ZOOM</b> See more of the map.</li>
+                  <li><span data-pu-icon="vision"></span><b>RADAR</b> See every rival on your map.</li>
+                </ul>
+                <p class="guide-lead">Grab them in the arena, or buy them in the STORE and tap them (or press 1-5) when you need them.</p>
+              </article>
+            </div>
+          </section>
           <section class="howto-section" data-howto-section="landmarks" hidden>
-            <p class="guide-lead guide-wide">Towers turn ON and OFF. Look for them on your map.</p>
+            <p class="guide-lead guide-wide">Loop your land around a tower to capture it. Only its owner gets its power.</p>
             <div class="guide-grid guide-grid-4">
               <article class="guide-card guide-landmark" data-kind="beacon">
                 <h3 class="guide-title"><span class="lm-badge" data-kind="beacon" aria-hidden="true"></span>BONUS TOWER</h3>
-                <p>Grab land in its circle = <b>double</b> points.</p>
+                <p>Own it = <b>double points</b> everywhere.</p>
               </article>
               <article class="guide-card guide-landmark" data-kind="flux">
                 <h3 class="guide-title"><span class="lm-badge" data-kind="flux" aria-hidden="true"></span>ENERGY CORE</h3>
-                <p>Throws out free energy. Fill your boost here.</p>
+                <p>Own it = it <b>fills your boost</b>, wherever you are.</p>
               </article>
               <article class="guide-card guide-landmark" data-kind="rift">
                 <h3 class="guide-title"><span class="lm-badge" data-kind="rift" aria-hidden="true"></span>TELEPORTER</h3>
-                <p>Walk in. Pop out at the edge of your land.</p>
+                <p>Own it = <b>only you</b> can use it. Walk in, pop out at the edge of your land.</p>
               </article>
               <article class="guide-card guide-landmark" data-kind="stasis">
                 <h3 class="guide-title"><span class="lm-badge" data-kind="stasis" aria-hidden="true"></span>SLOW TOWER</h3>
-                <p>Rivals near it go <b>slow</b>. You don't.</p>
+                <p>Rivals in its snowy ring go <b>slow</b>. Own it = it never slows you.</p>
               </article>
             </div>
           </section>

@@ -9,9 +9,11 @@ export class FluxCoreSystem {
     this.landmarks = [];
     this.spawnTimer = 0;
     this.lastEmission = 0;
+    this.ownerPulses = []; // owner slots whose boost this frame's pulses refill
   }
 
   reset(territory = null) {
+    this.ownerPulses = [];
     this.landmarks = [];
     if (territory) {
       for (const [i, point] of createStrategicLandmarks(
@@ -37,6 +39,7 @@ export class FluxCoreSystem {
 
   /** Each core cycles ON/OFF on its own clock (other landmarks never pause it). */
   update(dt, territory, energy) {
+    this.ownerPulses.length = 0;
     if (!this.landmarks.length) return null;
     let event = null;
     const activeNow = [];
@@ -51,7 +54,13 @@ export class FluxCoreSystem {
           event = 'expired';
         } else if (core.pulseTimer <= 0) {
           core.pulseTimer += FLUX_CORE.PULSE_INTERVAL;
-          this.lastEmission = energy.emitBurst(core.x, core.y, FLUX_CORE.PICKUPS_PER_PULSE, FLUX_CORE.BURST_RADIUS);
+          if (core.ownerSlot) {
+            // Captured: the pulse goes straight into its owner's boost meter.
+            this.ownerPulses.push(core.ownerSlot);
+            this.lastEmission = 0;
+          } else {
+            this.lastEmission = energy.emitBurst(core.x, core.y, FLUX_CORE.PICKUPS_PER_PULSE, FLUX_CORE.BURST_RADIUS);
+          }
           event = 'pulse';
         }
       } else {

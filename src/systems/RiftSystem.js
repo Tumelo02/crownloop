@@ -105,6 +105,7 @@ export class RiftSystem {
       let candidate = null;
       for (const creature of creatures) {
         if (!creature.alive || this.usedCreatures.has(creature)) continue;
+        if (!gate.ownerSlot || creature.slot !== gate.ownerSlot) continue; // only its owner may enter
         if (territory.trailLength(creature.slot) > 0) continue;
         if (distSq(creature.x, creature.y, gate.x, gate.y) > RIFT.ENTRY_RADIUS ** 2) continue;
         candidate = creature;

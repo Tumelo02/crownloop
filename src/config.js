@@ -328,7 +328,7 @@ export const DIFFICULTY = Object.freeze({
     }),
     hard: Object.freeze({
       label: 'HARD', aggression: 2.1, sense: 1.7, think: 0.35, chase: 2.4, turn: 1.3, speed: 1.08, boost: 0.35,
-      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.25, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
+      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.2, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
     }),
   }),
 });
@@ -518,14 +518,14 @@ export const STRATEGIC_LANDMARKS = Object.freeze({
 // Shared tuning for the four strategic landmarks. Gameplay numbers live in each
 // landmark's own block; everything presentation/claim related lives here.
 export const LANDMARKS = Object.freeze({
-  SCALE: 0.74, // keep strategic structures as major world anchors without dominating the arena
+  SCALE: 0.58, // smaller structures: landmarks, not walls that hide players
   LEAN: 0, // upright: no sideways shear (structures stand straight wherever they are on screen)
   RISE: 0,
   // Each landmark cycles ON/OFF on its own (staggered at the start). Its switch-on is announced
   // only when it is this close to you (or yours), at most every ANNOUNCE_GAP seconds.
-  ANNOUNCE_RANGE: 1900,
+  SPREAD_MIN: 1500, // any two landmarks (of any kind) are at least this far apart: scattered
   ANNOUNCE_GAP: 8,
-  GLOW: 1, // global glow intensity multiplier
+  GLOW: 0.55, // softer glow so landmarks never outshine the players
   PARTICLE_DENSITY: 1, // multiplier on each structure's ambient mote count
   CLAIM_TAKE_TIME: 1.6, // seconds a slot must hold the landmark's cell to claim it
   CLAIM_RELEASE_TIME: 5, // seconds neutral must hold it before it releases
@@ -565,6 +565,7 @@ export const FLUX_CORE = Object.freeze({
   ACTIVE_DURATION: 42,
   COOLDOWN: 30,
   PULSE_INTERVAL: 6,
+  OWNER_ENERGY: 30, // captured: every pulse refills this much of its owner's boost, wherever they are
   FIRST_PULSE_DELAY: 1.5,
   PICKUPS_PER_PULSE: 5,
   BURST_RADIUS: 180,

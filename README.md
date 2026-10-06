@@ -540,3 +540,18 @@ Every creature is driven only through `setIntent(x, y, throttle)`. Local input, 
 - Measured with an active player in 8-minute, 30-player matches: 270-520 bot-vs-bot knockouts per match, a bot King
   in every match at every level (1-8 crown changes), chases on the player per minute EASY ~0.5, NORMAL ~1.6, HARD 4-8
   with ~5 bots stalking the player on HARD.
+
+## Landmarks: owner-only powers
+
+- Scattered: any two landmarks (any kind) are at least `LANDMARKS.SPREAD_MIN` (1500) apart (`nodePlacement` shares
+  one layout per match). Smaller and dimmer (`SCALE` 0.58, `GLOW` 0.55); name plates are one small line.
+- Only the owner is told: switch-on banners and minimap ripples are for your own landmarks; capture banners say
+  what you got.
+- Bonus Tower: owning one doubles your capture and knockout points everywhere (no ring, no timer).
+- Energy Core: owned = each pulse adds `FLUX_CORE.OWNER_ENERGY` (30) to the owner's boost, wherever they are;
+  unowned = it sprays energy around itself.
+- Teleporter: only its owner can go through; the owner is told when it opens.
+- Slow Tower: while ON, everyone in its ring except its owner moves 35% slower; snow falls in the ring and slowed
+  creatures get a frost ring with circling snowflakes.
+- How to Play: new BOOST & POWER-UPS tab (energy dots, boosting, the five power-ups); LANDMARKS tab rewritten.
+- HARD `infight` 0.2: a bot King appeared in every simulated Hard match (3-7 crown changes).
