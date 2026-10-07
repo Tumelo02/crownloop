@@ -2941,4 +2941,5 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
 .guide-pu li { display: flex; align-items: center; gap: 8px; }
 .guide-pu .pu-icon { width: 26px; height: 26px; }
 .guide-pu b { min-width: 74px; color: var(--text) !important; letter-spacing: 0.06em; }
-
+.graphics-setting { justify-self: start; }
+.graphics-setting button.active { color: #031410; background: var(--mint); }

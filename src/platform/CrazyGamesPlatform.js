@@ -303,12 +303,28 @@ export class CrazyGamesPlatform {
   gameplayStart() {
     if (this.gameplayActive) return;
     this.gameplayActive = true;
-    this.callGameMethod('gameplayStart');
+    // The SDK throttles a start that comes less than a second after a stop: wait it out.
+    const wait = 1050 - (performance.now() - (this.lastStopAt || -Infinity));
+    if (wait > 0) {
+      this.startTimer = setTimeout(() => {
+        this.startTimer = 0;
+        if (this.gameplayActive) this.callGameMethod('gameplayStart');
+      }, wait);
+    } else {
+      this.callGameMethod('gameplayStart');
+    }
   }
 
   gameplayStop() {
     if (!this.gameplayActive) return;
     this.gameplayActive = false;
+    if (this.startTimer) {
+      // The delayed start never went out: nothing to stop.
+      clearTimeout(this.startTimer);
+      this.startTimer = 0;
+      return;
+    }
+    this.lastStopAt = performance.now();
     this.callGameMethod('gameplayStop');
   }
 

@@ -54,6 +54,7 @@ import { HowToPanel } from '../ui/HowToPanel.js';
 import { AccountName } from '../ui/AccountName.js';
 import { resetLandmarkLayout } from '../world/nodePlacement.js';
 import { DifficultyPicker } from '../ui/DifficultyPicker.js';
+import { GraphicsSetting } from '../ui/GraphicsSetting.js';
 import { setBotDifficulty } from '../entities/Enemy.js';
 import { shareGame } from '../ui/share.js';
 import { POWER_UP_ITEMS } from '../progression/storeCatalog.js';
@@ -208,6 +209,12 @@ export class Game {
     this.leaderboardPanel.onInvite = invite;
     this.wheelPanel = new WheelPanel(this.audio, this.progress, this.platform);
     this.difficulty = new DifficultyPicker(this.audio);
+    // HIGH: full sharpness always (any automatic reduction is undone at once). AUTO: adaptive.
+    this.graphics = new GraphicsSetting(this.audio, () => {
+      this.qualityCap = null;
+      this.qualityClock = null;
+      this.resize();
+    });
     this.howToPanel = new HowToPanel(this.audio, () => this.progress.selectedCharacter, () => {
       this.tutorial.replayNext();
       document.getElementById('play-button')?.click();
@@ -1817,6 +1824,7 @@ export class Game {
    * (average over RENDER.SLOW_FRAME_MS for RENDER.ADAPT_SECONDS), draws a step less sharp.
    */
   adaptQuality(now) {
+    if (this.graphics?.high) return; // Settings > Graphics: HIGH never lowers sharpness
     // A long pause (hidden tab, an ad, a death screen) is not slowness: start measuring again.
     const gap = now - (this.qualityLast || now);
     this.qualityLast = now;
