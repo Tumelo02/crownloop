@@ -86,8 +86,8 @@ export class CrazyGamesPlatform {
       }
       if (!['local', 'crazygames'].includes(sdk.environment)) return false;
       this.sdk = sdk;
-      this.requiresMouseLock = sdk.environment === 'crazygames'
-        && sdk.user?.systemInfo?.device?.type === 'desktop';
+      // No mouse lock: the real cursor steers (it felt heavy locked) and can click the item bar.
+      this.requiresMouseLock = false;
       this.allowLegacyMigration = sdk.environment === 'local';
       if (sdk.environment === 'crazygames' && sdk.user && typeof sdk.user.getUser === 'function') {
         try {

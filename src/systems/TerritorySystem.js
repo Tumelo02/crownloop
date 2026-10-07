@@ -511,8 +511,15 @@ export class TerritorySystem {
       ? Math.min(1, 0.82 + 0.18 * Math.sin(this.time * 6) + pulse)
       : 0.75;
     if (warning) {
-      ctx.shadowColor = this.flashStyles[slot];
-      ctx.shadowBlur = 7 / zoom;
+      // Warning glow: a wide soft stroke underneath (a blur shadow on a long trail is very slow).
+      const alpha = ctx.globalAlpha;
+      ctx.strokeStyle = this.flashStyles[slot];
+      ctx.lineWidth = lineWidth * 2.6;
+      ctx.globalAlpha = 0.35;
+      ctx.stroke();
+      ctx.strokeStyle = this.trailStyles[slot];
+      ctx.lineWidth = lineWidth;
+      ctx.globalAlpha = alpha;
     }
     ctx.stroke();
     const identityTrail = this.trailIdentityStyles[slot];

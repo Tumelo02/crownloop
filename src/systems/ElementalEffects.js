@@ -126,7 +126,7 @@ export class ElementalEffects {
     ctx.lineJoin = 'round';
     ctx.lineWidth = Math.max(1.4 / zoom, 2.1 / zoom * fade);
     ctx.shadowColor = EFFECT_SHADOW; // dark backing: pale elements stay readable on the light floor
-    ctx.shadowBlur = 9 / zoom;
+    ctx.shadowBlur = 0; // (no blur: it made fights lag)
     ctx.beginPath();
     if (style === 'ripple') {
       ctx.ellipse(0, 0, length, length * 0.32, 0, 0.12, Math.PI - 0.12);
@@ -236,7 +236,7 @@ export class ElementalEffects {
     ctx.globalAlpha = fade * 0.62;
     ctx.strokeStyle = effect.character.palette.accent;
     ctx.shadowColor = EFFECT_SHADOW;
-    ctx.shadowBlur = 5 / zoom;
+    ctx.shadowBlur = 0; // (no blur: it made fights lag)
     ctx.lineWidth = Math.max(0.8 / zoom, 1.5 / zoom * fade);
     ctx.lineCap = 'round';
     ctx.beginPath();
@@ -299,7 +299,7 @@ export class ElementalEffects {
     ctx.strokeStyle = effect.character.palette.primary;
     ctx.fillStyle = effect.character.palette.primary;
     ctx.shadowColor = EFFECT_SHADOW; // dark backing: pale elements stay readable on the light floor
-    ctx.shadowBlur = 10 / zoom;
+    ctx.shadowBlur = 0; // (no blur: it made fights lag)
     ctx.lineWidth = Math.max(1 / zoom, 2.6 / zoom * fade);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
@@ -402,7 +402,7 @@ export class ElementalEffects {
     ctx.globalAlpha = fade * 0.58;
     ctx.strokeStyle = effect.character.palette.primary;
     ctx.shadowColor = EFFECT_SHADOW; // dark backing: pale elements stay readable on the light floor
-    ctx.shadowBlur = 7 / zoom;
+    ctx.shadowBlur = 0; // (no blur: it made fights lag)
     ctx.lineWidth = Math.max(0.8 / zoom, 1.7 / zoom * fade);
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';

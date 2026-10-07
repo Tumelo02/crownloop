@@ -61,17 +61,22 @@ export class StasisSystem {
       if (field.active) nowActive.push(field);
     }
     this.active = nowActive.find((field) => field && field.active) || null;
-    this.apply(creatures);
+    this.apply(creatures, territory);
     return event;
   }
 
-  /** Everyone inside an ON Slow Tower's ring moves slower, except the tower's owner. */
-  apply(creatures) {
+  /**
+   * Everyone inside an ON Slow Tower's ring moves slower, except the tower's owner. The tower
+   * counts as yours the moment it stands on your land (no wait for the claim to register).
+   */
+  apply(creatures, territory = null) {
     const radiusSquared = STASIS.SLOW_RADIUS ** 2;
+    for (const field of this.landmarks) field.landOwner = territory ? territory.ownerAt(field.x, field.y) : 0;
     for (const creature of creatures) {
       let affected = false;
       for (const field of this.landmarks) {
-        if (!field.active || !creature.alive || creature.slot === field.ownerSlot) continue;
+        if (!field.active || !creature.alive) continue;
+        if (creature.slot === field.ownerSlot || creature.slot === field.landOwner) continue;
         if (distSq(creature.x, creature.y, field.x, field.y) <= radiusSquared) {
           affected = true;
           break;

@@ -63,6 +63,11 @@ export class PlayerProgress {
     this.adCoins = { day: null, count: 0, lastAt: 0 };
     this.saveTimer = 0;
     this.listeners = [];
+    this.writeTimer = 0;
+    // Never lose a pending save: write it when the tab is hidden or closed.
+    const flush = () => { if (this.writeTimer) this.flushSave(); };
+    window.addEventListener('pagehide', flush);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
     if (!this.load()) this.giveStarter();
   }
 
@@ -181,9 +186,19 @@ export class PlayerProgress {
     this.listeners.push(listener);
   }
 
+  /**
+   * Something changed: menus update now; the save is batched (at most ~once a second, so a
+   * shower of coins mid-match is one cloud save, not dozens), and flushed when the page hides.
+   */
   changed() {
-    this.save();
+    if (!this.writeTimer) this.writeTimer = setTimeout(() => this.flushSave(), 1000);
     for (const listener of this.listeners) listener(this);
+  }
+
+  flushSave() {
+    clearTimeout(this.writeTimer);
+    this.writeTimer = 0;
+    this.save();
   }
 
   addCoins(amount) {

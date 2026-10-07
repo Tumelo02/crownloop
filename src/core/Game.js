@@ -729,6 +729,13 @@ export class Game {
         event,
       );
       const { landmark } = event;
+      // Your landmark was taken by a rival, or went back to nobody: always tell you.
+      if (this.local && event.previous === this.local.slot && event.slot !== this.local.slot) {
+        const taker = event.slot ? this.roster.get(event.slot) : null;
+        this.audio.play('landmarkLost');
+        this.announcer.show(`${event.label} LOST`, taker ? `${taker.name} took your ${event.label.toLowerCase()}!`
+          : `Your ${event.label.toLowerCase()} is free again: loop around it to take it back`, AnnounceStyle.LOSS, 1.8);
+      }
       if (event.type === 'claimed') {
         if (this.inView(landmark.x, landmark.y, 320)) {
           const owner = this.roster.get(event.slot);
@@ -743,8 +750,6 @@ export class Game {
               AnnounceStyle.SURGE, 1.8);
           }
         }
-      } else if (event.previous === this.local?.slot) {
-        this.audio.play('landmarkLost');
       }
     }
   }
