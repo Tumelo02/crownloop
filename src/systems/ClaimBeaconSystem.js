@@ -19,18 +19,13 @@ export class ClaimBeaconSystem {
   reset(territory = null) {
     this.landmarks = [];
     if (territory) {
-      for (const [i, point] of createStrategicLandmarks(
+      for (const point of createStrategicLandmarks(
         territory,
         STRATEGIC_LANDMARKS.CLAIM_BEACON,
         CLAIM_BEACON.INFLUENCE_RADIUS,
         CLAIM_BEACON.LANDMARK_MIN_DISTANCE,
-      ).entries()) {
-        const on = i % 2 === 0; // staggered: about half start ON, the rest switch on later
-        this.landmarks.push({
-          ...point, active: on,
-          remaining: on ? CLAIM_BEACON.ACTIVE_DURATION * (0.4 + Math.random() * 0.6) : 0,
-          cooldown: on ? 0 : CLAIM_BEACON.COOLDOWN * (0.2 + Math.random() * 0.8),
-        });
+      )) {
+        this.landmarks.push({ ...point, active: false }); // ON only while someone owns it
       }
     }
     this.active = this.landmarks.find((beacon) => beacon && beacon.active) || null;
@@ -38,11 +33,10 @@ export class ClaimBeaconSystem {
     this.spawnTimer = 0;
   }
 
-  /** Each tower cycles ON/OFF on its own clock (other landmarks never pause it). */
-  /** Bonus Towers are always ON: what matters is who owns one. */
+  /** A Bonus Tower is ON exactly while someone owns it. */
   update() {
-    for (const beacon of this.landmarks) beacon.active = true;
-    this.active = this.landmarks[0] || null;
+    for (const beacon of this.landmarks) beacon.active = Boolean(beacon.ownerSlot);
+    this.active = this.landmarks.find((beacon) => beacon.active) || null;
     return null;
   }
 

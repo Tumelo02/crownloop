@@ -5,7 +5,7 @@ import { drawLandmarkBoundary, drawLandmarkZone, drawStasisStructure, drawSnowFi
 
 const SLOW_RGB = [120, 175, 255];
 
-/** Stasis landmarks remain fixed in the world and cycle the slow field on and off. */
+/** Stasis landmarks remain fixed in the world; once captured, the slow field cycles on and off. */
 export class StasisSystem {
   constructor() {
     this.active = null;
@@ -16,32 +16,36 @@ export class StasisSystem {
   reset(territory = null) {
     this.landmarks = [];
     if (territory) {
-      for (const [i, point] of createStrategicLandmarks(
+      for (const point of createStrategicLandmarks(
         territory,
         STRATEGIC_LANDMARKS.STASIS,
         STASIS.SLOW_RADIUS,
         STASIS.LANDMARK_MIN_DISTANCE,
-      ).entries()) {
-        const on = i % 2 === 0; // staggered: about half start ON, the rest switch on later
-        this.landmarks.push({
-          ...point, active: on,
-          remaining: on ? STASIS.ACTIVE_DURATION * (0.4 + Math.random() * 0.6) : 0,
-          cooldown: on ? 0 : STASIS.COOLDOWN * (0.2 + Math.random() * 0.8),
-        });
+      )) {
+        // Off until someone captures it (see update).
+        this.landmarks.push({ ...point, active: false, remaining: 0, cooldown: 0 });
       }
     }
     this.active = this.landmarks.find((field) => field && field.active) || null;
     this.spawnTimer = 0;
   }
 
-  /** Each tower cycles ON/OFF on its own clock (other landmarks never pause it). */
+  /**
+   * A tower does nothing until captured: it switches ON the moment it has an owner, then
+   * cycles ON/OFF on its own clock. Losing its owner shuts it off.
+   */
   update(dt, territory, creatures) {
     if (!this.landmarks.length) return null;
 
     let event = null;
     const nowActive = [];
     for (const field of this.landmarks) {
-      if (field.active) {
+      if (!field.ownerSlot) {
+        if (field.active) event = 'expired';
+        field.active = false;
+        field.remaining = 0;
+        field.cooldown = 0;
+      } else if (field.active) {
         field.remaining -= dt;
         if (field.remaining <= 0) {
           field.active = false;
@@ -75,7 +79,7 @@ export class StasisSystem {
     for (const creature of creatures) {
       let affected = false;
       for (const field of this.landmarks) {
-        if (!field.active || !creature.alive) continue;
+        if (!field.active || !field.ownerSlot || !creature.alive) continue;
         if (creature.slot === field.ownerSlot || creature.slot === field.landOwner) continue;
         if (distSq(creature.x, creature.y, field.x, field.y) <= radiusSquared) {
           affected = true;

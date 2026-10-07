@@ -2,7 +2,7 @@ import { FLUX_CORE, STRATEGIC_LANDMARKS } from '../config.js';
 import { createStrategicLandmarks } from '../world/nodePlacement.js';
 import { drawFluxCore, drawLandmarkBoundary } from '../render/StrategicLandmarkRenderer.js';
 
-/** Flux Core landmarks are static world features that periodically emit energy bursts. */
+/** Flux Core landmarks are static world features; once captured, they pulse energy into the owner's boost. */
 export class FluxCoreSystem {
   constructor() {
     this.active = null;
@@ -16,20 +16,14 @@ export class FluxCoreSystem {
     this.ownerPulses = [];
     this.landmarks = [];
     if (territory) {
-      for (const [i, point] of createStrategicLandmarks(
+      for (const point of createStrategicLandmarks(
         territory,
         STRATEGIC_LANDMARKS.FLUX_CORE,
         FLUX_CORE.BURST_RADIUS,
         FLUX_CORE.LANDMARK_MIN_DISTANCE,
-      ).entries()) {
-        const on = i % 2 === 0; // staggered: about half start ON, the rest switch on later
-        const p = point;
-        this.landmarks.push({
-          ...p, active: on,
-          remaining: on ? FLUX_CORE.ACTIVE_DURATION * (0.4 + Math.random() * 0.6) : 0,
-          cooldown: on ? 0 : FLUX_CORE.COOLDOWN * (0.2 + Math.random() * 0.8),
-          pulseTimer: FLUX_CORE.FIRST_PULSE_DELAY + ((p.x + p.y) * 0.001 % 1.5),
-        });
+      )) {
+        // Off until someone captures it (see update).
+        this.landmarks.push({ ...point, active: false, remaining: 0, cooldown: 0, pulseTimer: 0 });
       }
     }
     this.active = this.landmarks.find((core) => core && core.active) || null;
@@ -37,14 +31,22 @@ export class FluxCoreSystem {
     this.spawnTimer = 0;
   }
 
-  /** Each core cycles ON/OFF on its own clock (other landmarks never pause it). */
+  /**
+   * A core does nothing until captured: it switches ON the moment it has an owner, then
+   * cycles ON/OFF on its own clock. Losing its owner shuts it off.
+   */
   update(dt, territory, energy) {
     this.ownerPulses.length = 0;
     if (!this.landmarks.length) return null;
     let event = null;
     const activeNow = [];
     for (const core of this.landmarks) {
-      if (core.active) {
+      if (!core.ownerSlot) {
+        if (core.active) event = 'expired';
+        core.active = false;
+        core.remaining = 0;
+        core.cooldown = 0;
+      } else if (core.active) {
         core.remaining -= dt;
         core.pulseTimer -= dt;
         if (core.remaining <= 0) {
@@ -54,13 +56,9 @@ export class FluxCoreSystem {
           event = 'expired';
         } else if (core.pulseTimer <= 0) {
           core.pulseTimer += FLUX_CORE.PULSE_INTERVAL;
-          if (core.ownerSlot) {
-            // Captured: the pulse goes straight into its owner's boost meter.
-            this.ownerPulses.push(core.ownerSlot);
-            this.lastEmission = 0;
-          } else {
-            this.lastEmission = energy.emitBurst(core.x, core.y, FLUX_CORE.PICKUPS_PER_PULSE, FLUX_CORE.BURST_RADIUS);
-          }
+          // The pulse goes straight into its owner's boost meter.
+          this.ownerPulses.push(core.ownerSlot);
+          this.lastEmission = 0;
           event = 'pulse';
         }
       } else {

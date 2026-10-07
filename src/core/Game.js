@@ -1520,7 +1520,8 @@ export class Game {
     this.landmarkAnnounceGap = Math.max(0, (this.landmarkAnnounceGap || 0) - dt);
     const player = this.player;
     for (const lm of this.minimapLandmarks()) {
-      const switchedOn = lm.active && lm.wasOn === false;
+      // A capture switches it on at once; the CAPTURED banner already covers that moment.
+      const switchedOn = lm.active && lm.wasOn === false && !(lm.claimPulse > 0);
       lm.wasOn = Boolean(lm.active);
       if (!switchedOn || this.state !== GameState.PLAYING || !player || !player.alive) continue;
       const yours = lm.ownerSlot && lm.ownerSlot === this.local.slot;

@@ -225,21 +225,23 @@ export class Enemy extends Creature {
       ai.waypointX = energy.x;
       ai.waypointY = energy.y;
     }
-    const beacon = world.claimBeacon && world.claimBeacon.active;
+    // Landmarks only work once captured, so bots head for ones they do not own yet.
+    const beacon = this.nearestLandmark(world.claimBeacon, (lm) => lm.ownerSlot !== this.slot);
     const beaconDistance = beacon ? distSq(this.x, this.y, beacon.x, beacon.y) : Infinity;
     if (beacon && beaconDistance < CLAIM_BEACON.BOT_INTEREST_RANGE ** 2
       && Math.random() < CLAIM_BEACON.BOT_INTEREST_CHANCE) {
       ai.waypointX = beacon.x;
       ai.waypointY = beacon.y;
     }
-    const core = world.fluxCore && world.fluxCore.active;
+    const core = this.nearestLandmark(world.fluxCore, (lm) => lm.ownerSlot !== this.slot);
     const coreDistance = core ? distSq(this.x, this.y, core.x, core.y) : Infinity;
     if (core && coreDistance < FLUX_CORE.BOT_INTEREST_RANGE ** 2
       && Math.random() < FLUX_CORE.BOT_INTEREST_CHANCE) {
       ai.waypointX = core.x;
       ai.waypointY = core.y;
     }
-    const rift = world.rift && world.rift.active;
+    // A Teleporter is only usable by its owner while it is open.
+    const rift = this.nearestLandmark(world.rift, (lm) => lm.active && lm.ownerSlot === this.slot);
     const riftDistance = rift ? distSq(this.x, this.y, rift.x, rift.y) : Infinity;
     if (rift && world.territory.trailLength(this.slot) === 0
       && riftDistance < RIFT.BOT_INTEREST_RANGE ** 2
@@ -247,6 +249,22 @@ export class Enemy extends Creature {
       ai.waypointX = rift.x;
       ai.waypointY = rift.y;
     }
+  }
+
+  /** The closest landmark of one kind that passes `accept`, or null. */
+  nearestLandmark(system, accept) {
+    if (!system || !system.landmarks) return null;
+    let best = null;
+    let bestDistance = Infinity;
+    for (const lm of system.landmarks) {
+      if (!accept(lm)) continue;
+      const d = distSq(this.x, this.y, lm.x, lm.y);
+      if (d < bestDistance) {
+        bestDistance = d;
+        best = lm;
+      }
+    }
+    return best;
   }
 
   steer() {

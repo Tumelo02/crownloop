@@ -28,14 +28,13 @@ export class RiftSystem {
     const entries = createStrategicLandmarks(
       territory, STRATEGIC_LANDMARKS.RIFT, RIFT.ENTRY_PLACEMENT_RADIUS, RIFT.LANDMARK_MIN_DISTANCE,
     );
-    for (const [i, entry] of entries.entries()) {
-      const on = i % 2 === 0; // staggered: about half start ON, the rest switch on later
+    for (const entry of entries) {
       this.landmarks.push({
         x: entry.x,
         y: entry.y,
-        active: on,
-        activeTimer: on ? RIFT.ACTIVE_DURATION * (0.4 + Math.random() * 0.6) : 0,
-        cooldown: on ? 0 : RIFT.COOLDOWN * (0.2 + Math.random() * 0.8),
+        active: false, // shut until someone captures it (see update)
+        activeTimer: 0,
+        cooldown: 0,
         charging: null, // creature currently being recognised
         chargeT: 0,
         enterFx: 0, // absorption flare timer
@@ -46,15 +45,23 @@ export class RiftSystem {
   }
 
   /**
-   * Each gate opens and closes on its own clock: open ACTIVE_DURATION, then shut COOLDOWN
-   * (or USE_COOLDOWN right after a trip), then open again. Other landmarks never pause it.
+   * A gate stays shut until captured. Then it opens and closes on its own clock: open
+   * ACTIVE_DURATION, then shut COOLDOWN (or USE_COOLDOWN right after a trip), then open again.
+   * Losing its owner shuts it.
    */
   update(dt) {
     if (!this.landmarks.length) return null;
     let event = null;
     const nowActive = [];
     for (const gate of this.landmarks) {
-      {
+      if (!gate.ownerSlot) {
+        if (gate.active) event = 'expired';
+        gate.active = false;
+        gate.activeTimer = 0;
+        gate.cooldown = 0;
+        gate.charging = null;
+        gate.chargeT = 0;
+      } else {
         if (gate.active) {
           gate.activeTimer -= dt;
           if (gate.activeTimer <= 0) {
