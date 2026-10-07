@@ -391,6 +391,20 @@ export class TerritorySystem {
         const distanceSquared = this.segmentTrailDistanceSquared(
           creature, path, segmentEnd, movementEndX, movementEndY, contact,
         );
+        // Tangling: the head's path actually crosses an older piece of its own trail. That is a
+        // self-cut however tight the loop, even inside the stretch excluded above.
+        if (selfTrail && movementEndT > 0
+          && this.movementCrossesOwnTrail(creature, path, movementEndX, movementEndY, contact)) {
+          this.trailCuts.push({
+            cutter: creature,
+            victim: owner,
+            selfTrail: true,
+            x: contact.x,
+            y: contact.y,
+            heading: Math.atan2(creature.y - creature.previousY, creature.x - creature.previousX),
+          });
+          continue;
+        }
         const nearestDistanceSquared = distanceSquared;
         if (selfTrail && nearestDistanceSquared <= TERRITORY.TRAIL_WARNING_DISTANCE ** 2) {
           creature.nearOwnTrail = true;
@@ -453,6 +467,44 @@ export class TerritorySystem {
       if (Math.max(a.x, b.x) < left || Math.min(a.x, b.x) > right
         || Math.max(a.y, b.y) < top || Math.min(a.y, b.y) > bottom) continue;
       if (closestSegmentPoints(x0, y0, x1, y1, a.x, a.y, b.x, b.y, closest) <= r2) return true;
+    }
+    return false;
+  }
+
+  /**
+   * True when this frame's head movement crosses one of the creature's own older trail
+   * segments (the ones laid down this frame, and the one joining them, can't count).
+   * Writes the crossing point into `contact`.
+   */
+  movementCrossesOwnTrail(creature, path, endX, endY, contact) {
+    const ax = creature.previousX;
+    const ay = creature.previousY;
+    const moved = Math.hypot(creature.x - ax, creature.y - ay);
+    if (moved < 1e-6) return false;
+    const laidThisFrame = Math.max(1, Math.ceil(moved / TERRITORY.TRAIL_POINT_SPACING));
+    const last = path.length - 2 - laidThisFrame; // newest segment allowed to count
+    const minX = Math.min(ax, endX);
+    const maxX = Math.max(ax, endX);
+    const minY = Math.min(ay, endY);
+    const maxY = Math.max(ay, endY);
+    const ex = endX - ax;
+    const ey = endY - ay;
+    for (let i = 0; i <= last; i++) {
+      const c = path[i];
+      const d = path[i + 1];
+      if (Math.max(c.x, d.x) < minX || Math.min(c.x, d.x) > maxX
+        || Math.max(c.y, d.y) < minY || Math.min(c.y, d.y) > maxY) continue;
+      const fx = d.x - c.x;
+      const fy = d.y - c.y;
+      const denom = ex * fy - ey * fx;
+      if (Math.abs(denom) < 1e-9) continue; // parallel: running alongside is not a crossing
+      const t = ((c.x - ax) * fy - (c.y - ay) * fx) / denom;
+      const u = ((c.x - ax) * ey - (c.y - ay) * ex) / denom;
+      if (t > 0 && t <= 1 && u > 0 && u < 1) {
+        contact.x = ax + ex * t;
+        contact.y = ay + ey * t;
+        return true;
+      }
     }
     return false;
   }
