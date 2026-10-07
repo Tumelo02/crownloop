@@ -621,7 +621,7 @@ export const STASIS = Object.freeze({
   COOLDOWN: 30,
   SLOW_RADIUS: 420,
   CLAIM_RADIUS: 320,
-  SPEED_MULTIPLIER: 0.65,
+  SPEED_MULTIPLIER: 0.25, // rivals in the ring crawl at a quarter speed (boost included); the owner is never slowed
   PLACEMENT_ATTEMPTS: 64,
   HUE: 198,
   LANDMARK_MIN_DISTANCE: 2200, // two landmarks of the same kind are never close together

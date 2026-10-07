@@ -130,7 +130,7 @@ const CAPTURE_PERKS = Object.freeze({
   beacon: 'Your points are doubled everywhere while you keep it',
   flux: 'It fills your boost every few seconds while it is ON',
   rift: 'Only you can use it now: step in to jump to your border',
-  stasis: 'Rivals in its ring move slower; you do not',
+  stasis: 'Rivals in its ring crawl at a quarter speed; you do not',
 });
 
 /** Banner + sound when one of YOUR landmarks switches on. */
@@ -138,7 +138,7 @@ const LANDMARK_ANNOUNCE = Object.freeze({
   beacon: { title: 'BONUS TOWER', sub: 'Double points everywhere while you own it', sound: 'claimBeacon' },
   flux: { title: 'ENERGY CORE IS ON', sub: 'It fills your boost every few seconds', sound: 'fluxCoreOnline' },
   rift: { title: 'TELEPORTER IS OPEN', sub: 'Only you can use it: step in to jump to your border', sound: 'riftOnline' },
-  stasis: { title: 'SLOW TOWER IS ON', sub: 'Rivals in its ring move 35% slower', sound: 'stasisOnline' },
+  stasis: { title: 'SLOW TOWER IS ON', sub: 'Rivals in its ring crawl at a quarter speed', sound: 'stasisOnline' },
 });
 
 export class Game {
