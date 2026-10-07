@@ -169,6 +169,7 @@ export class Screens {
   showRoundOver(result, progression, career) {
     const f = this.roundFields;
     f.winner.textContent = result.winnerName ? (result.playerWon ? `${result.winnerName} (YOU)` : result.winnerName) : 'No King';
+    f.winner.dataset.text = f.winner.textContent; // the logo lettering's gold layer repeats it
     // Nobody crowned: no crown and no "KING" label above "No King".
     for (const el of this.round.querySelectorAll('.crown-hero, .round-label')) el.hidden = !result.winnerName;
     f.winnerTerritory.textContent = result.winnerName ? `${result.winnerTerritory.toFixed(1)}% TERRITORY` : 'Nobody held the crown';

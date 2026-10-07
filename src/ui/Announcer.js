@@ -19,6 +19,7 @@ export class Announcer {
 
   show(title, sub, style, duration = 1.1) {
     this.title.textContent = title;
+    this.title.dataset.text = title; // the KING style's gold layer repeats it
     this.sub.textContent = sub || '';
     this.root.className = `announce ${style}`;
     void this.root.offsetWidth; // restart the CSS animation

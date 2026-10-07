@@ -1193,7 +1193,6 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
   text-shadow: 0 0 28px rgba(255, 211, 77, 0.35);
 }
 .round-share { margin: -4px 0 6px; font-size: 16px; font-weight: 800; letter-spacing: 0.2em; color: var(--gold-text); }
-#round-screen.won .round-king { text-shadow: 0 0 40px rgba(255, 211, 77, 0.6); }
 
 .screen-overlay .title-small { font-size: clamp(30px, 6vw, 54px); }
 .screen-overlay .subtitle { margin-bottom: 0; }
@@ -2961,3 +2960,32 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
 .guide-pu li { display: flex; align-items: center; gap: 8px; }
 .guide-pu .pu-icon { width: 26px; height: 26px; }
 .guide-pu b { min-width: 74px; color: var(--text) !important; letter-spacing: 0.06em; }
+
+/* The crown moments use the logo lettering (gold face, cream rim, brown outline), like the
+   CROWNLOOP title: the King's name at match end, "ELIMINATED BY THE KING", and the gold
+   banners (YOU ARE KING, REVENGE!, MATCH ENDS IN 3:00). The element is the brown outline;
+   ::after lays the gold face over it from data-text. */
+:is(.round-king, .king-out-title, .announce.king .announce-title) {
+  position: relative;
+  font-family: "Crownloop Title", "Arial Black", var(--font);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+  background: none;
+  filter: none;
+  color: #3b2108;
+  -webkit-text-stroke: 0.16em #3b2108;
+  text-shadow: 0 0.07em 0 #2a1604, 0 0.12em 0.2em rgba(0, 0, 0, 0.35);
+}
+:is(.round-king, .king-out-title, .announce.king .announce-title)::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  padding: inherit;
+  color: transparent;
+  -webkit-text-stroke: 0.03em #fff1c2;
+  text-shadow: none;
+  background: linear-gradient(180deg, #fff6c8 0%, #ffe066 30%, #ffc61a 60%, #e9930c 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
