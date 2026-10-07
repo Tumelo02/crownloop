@@ -333,8 +333,10 @@ export const DIFFICULTY = Object.freeze({
       playerBonus: 0.2, fight: 1.3, expand: 1.5, infight: 0.45, caution: 1.2, growth: 1.6, loops: 1.3, apex: 3.5, apexHunt: 1.2, beef: 0.45, aim: 7, hunters: 2, playerSense: 1.5, playerFocus: true,
     }),
     hard: Object.freeze({
-      label: 'HARD', aggression: 2.1, sense: 1.7, think: 0.35, chase: 2.4, turn: 1.3, speed: 1.08, boost: 0.35,
-      playerBonus: 0.55, fight: 1.6, expand: 2, infight: 0.2, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 0.85, aim: 4, hunters: 5, playerSense: 2.2, playerFocus: true,
+      // Very aggressive: a third of the bots hunt you down, every bot chases you on sight and keeps
+      // at it, a bot you knock out always comes back for you, and they aim right behind your head.
+      label: 'HARD', aggression: 3, sense: 2.2, think: 0.25, chase: 4, turn: 1.5, speed: 1.15, boost: 0.15,
+      playerBonus: 1, fight: 1.6, expand: 2, infight: 0.15, caution: 1.4, growth: 2.2, loops: 1.7, apex: 2, apexHunt: 5, beef: 1, aim: 2, hunters: 10, playerSense: 3, playerFocus: true,
     }),
   }),
 });

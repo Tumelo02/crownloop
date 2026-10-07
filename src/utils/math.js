@@ -36,9 +36,12 @@ export const hslToRgb = (h, s, l) => {
   return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
 };
 
-export const formatPercent = (value) => `${value < 20
-  ? (Math.floor((value + 1e-9) * 10) / 10).toFixed(1)
-  : Math.round(value)}%`;
+// Under 1% shows two decimals, so a small piece of land never reads as 0.0%.
+export const formatPercent = (value) => `${value < 1
+  ? (Math.floor((value + 1e-9) * 100) / 100).toFixed(2)
+  : value < 20
+    ? (Math.floor((value + 1e-9) * 10) / 10).toFixed(1)
+    : Math.round(value)}%`;
 
 export const formatClock = (seconds) => {
   const s = Math.max(0, Math.ceil(seconds));
