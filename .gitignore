@@ -9,3 +9,6 @@ store-assets/*.tmp
 
 # Third-party reference copy (CrazyGames documentation)
 CrazyGames Doc.txt
+
+# Unzipped copies of the upload zip (not source)
+crownloop/
