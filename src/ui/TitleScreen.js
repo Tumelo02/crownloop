@@ -49,6 +49,7 @@ export class TitleScreen {
       const span = document.createElement('span');
       span.className = 'title-letter';
       span.textContent = ch;
+      span.dataset.text = ch; // the gold layer (::after) repeats the letter over its outline
       span.setAttribute('aria-hidden', 'true');
       const jitter = rand(-0.03, 0.04);
       span.style.animationDelay = `${Math.max(0, TITLE.LETTER_DELAY_START + i * TITLE.LETTER_STAGGER + jitter).toFixed(3)}s`;

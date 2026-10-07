@@ -1224,12 +1224,34 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
   80% { transform: translateY(0.04em); }
   100% { opacity: 1; transform: translateY(0); }
 }
-/* The gradient lives on the letters themselves (each is its own box). */
-.title .title-letter {
-  background: linear-gradient(120deg, var(--mint), var(--blue));
+/* Start title lettered like the logo: each letter is its brown outline, with the gold
+   face (cream rim, gold gradient) laid over it by ::after. */
+#start-screen .title {
+  font-family: "Crownloop Title", "Arial Black", var(--font);
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  padding-left: 0.08em;
+  line-height: 1.15;
+  filter: none;
+}
+#start-screen .title .title-letter {
+  position: relative;
+  background: none;
+  color: #3b2108;
+  -webkit-text-stroke: 0.18em #3b2108;
+  text-shadow: 0 0.08em 0 #2a1604, 0 0.14em 0.22em rgba(0, 0, 0, 0.35);
+}
+#start-screen .title .title-letter::after {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: transparent;
+  -webkit-text-stroke: 0.035em #fff1c2;
+  text-shadow: none;
+  background: linear-gradient(180deg, #fff6c8 0%, #ffe066 30%, #ffc61a 60%, #e9930c 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
 }
 
 .name-field { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: -2px 0 4px; }
@@ -1304,11 +1326,11 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
 .screen { overflow-y: auto; justify-content: safe center; }
 
 /* Start title: the letters carry the gradient (the parent's would show as a block in its
-   padding), and it stays on one line, shrinking to fit narrow phones (~7.6em wide). */
+   padding), and it stays on one line, shrinking to fit narrow phones (~6.6em wide). */
 #start-screen .title {
   background: none;
   white-space: nowrap;
-  font-size: min(clamp(52px, 12vw, 120px), calc((100vw - 48px) / 8.8));
+  font-size: min(clamp(52px, 12vw, 120px), calc((100vw - 48px) / 7.4));
 }
 
 @media (max-width: 640px) {
@@ -2385,8 +2407,6 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
   background: radial-gradient(circle at 50% 42%, rgba(77, 251, 208, 0.22), transparent 48%), linear-gradient(180deg, #f5f8fd, #e3ebf6);
 }
 [data-theme="light"] #start-screen .menu-backdrop { opacity: 1; }
-[data-theme="light"] #start-screen .title .title-letter { background-image: linear-gradient(120deg, #0fb08e, #2f6fd6); }
-[data-theme="light"] #start-screen .title { filter: drop-shadow(0 4px 14px rgba(47, 111, 214, 0.18)); }
 [data-theme="light"] .name-input { border-color: rgba(15, 176, 142, 0.45); }
 [data-theme="light"] .name-input:focus { border-color: #0fb08e; box-shadow: 0 0 0 4px rgba(15, 176, 142, 0.18); }
 [data-theme="light"] .career-progress { border-color: rgba(15, 176, 142, 0.25); box-shadow: 0 6px 18px rgba(30, 50, 90, 0.08); }
@@ -2795,7 +2815,7 @@ canvas.crown-hero { width: 64px; height: 64px; margin-bottom: -6px; filter: drop
 .tab-kill-icon { display: inline-block; width: 13px; height: 13px; margin-right: 5px; vertical-align: -2px; color: #ff6b7a; }
 /* Wide but short frames (e.g. CrazyGames 907x510): the title stays clear of the side tiles. */
 @media (min-width: 641px) {
-  #start-screen .title { font-size: min(120px, calc((100vw - 230px) / 8.8), 13vh); }
+  #start-screen .title { font-size: min(120px, calc((100vw - 230px) / 7.4), 13vh); }
 }
 /* Leaderboard: WEEKLY / ALL-TIME switch and the rank badge before each value. */
 .ranking-periods { display: flex; gap: 6px; margin: 0 0 8px; }
