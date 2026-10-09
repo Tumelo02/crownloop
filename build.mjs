@@ -11,7 +11,28 @@ import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
-const OUT = 'dist';
+// `node build.mjs gd` builds the GameDistribution version into dist-gd/ (its SDK instead of
+// CrazyGames'); plain `node build.mjs` is the CrazyGames build in dist/.
+const GD = process.argv[2] === 'gd';
+const OUT = GD ? 'dist-gd' : 'dist';
+const GD_GAME_ID = '27f0b6a651fa4d2487940b39194abb78'; // same as src/platform/GameDistributionPlatform.js
+// GameDistribution's snippet: options first, then the SDK, loading with the page (never on a click).
+const GD_SNIPPET = `<script>
+    window.GD_OPTIONS = {
+      gameId: '${GD_GAME_ID}',
+      onEvent: function (event) {
+        (window.__gdEvents = window.__gdEvents || []).push(event);
+        if (window.__gdListener) window.__gdListener(event);
+      },
+    };
+    (function (d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      js.src = 'https://html5.api.gamedistribution.com/main.min.js';
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'gamedistribution-jssdk'));
+  </script>`;
 await rm(OUT, { recursive: true, force: true });
 await mkdir(OUT, { recursive: true });
 
@@ -54,6 +75,7 @@ const swap = (pattern, replacement) => {
 };
 swap(/<script type="module" src="src\/main\.js[^"]*"><\/script>/, `<script type="module" src="${jsName}"></script>`);
 swap(/<link rel="stylesheet" href="styles\.css[^"]*">/, `<link rel="stylesheet" href="${cssName}">`);
+if (GD) swap(/<script defer src="https:\/\/sdk\.crazygames\.com\/crazygames-sdk-v3\.js"><\/script>/, GD_SNIPPET);
 
 await Promise.all([
   writeFile(`${OUT}/game.js`, jsText),
@@ -62,4 +84,4 @@ await Promise.all([
 ]);
 
 const kb = (n) => `${(n / 1024).toFixed(0)} KB`;
-console.log(`dist/game.js ${kb(jsText.length)} · dist/styles.css ${kb(cssText.length)} · dist/index.html ${kb(html.length)}`);
+console.log(`${OUT}/game.js ${kb(jsText.length)} · ${OUT}/styles.css ${kb(cssText.length)} · ${OUT}/index.html ${kb(html.length)}`);

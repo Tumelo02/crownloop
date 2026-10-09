@@ -1,6 +1,7 @@
 # Installed packages and generated files
 node_modules/
 dist/
+dist-gd/
 *.zip
 
 # Local files

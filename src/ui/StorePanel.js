@@ -157,7 +157,7 @@ export class StorePanel {
     this.adLabel = document.getElementById('ad-coins-label');
     this.adStatus = document.getElementById('ad-coins-status');
     if (!this.adButton) return;
-    if (!ADS_ENABLED) {
+    if (!ADS_ENABLED && !this.platform?.adsEnabled) {
       // Basic Launch: no ads at all, so no ad offer. The free ways to earn stay.
       this.adButton.closest('.coin-offer')?.remove();
       this.adButton = null;

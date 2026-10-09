@@ -1,8 +1,10 @@
 import { Game } from './core/Game.js';
 import { CrazyGamesPlatform } from './platform/CrazyGamesPlatform.js';
+import { GameDistributionPlatform } from './platform/GameDistributionPlatform.js';
 
 async function startGame() {
-  const platform = new CrazyGamesPlatform();
+  // The GameDistribution build's index.html defines GD_OPTIONS; every other page is CrazyGames.
+  const platform = window.GD_OPTIONS ? new GameDistributionPlatform() : new CrazyGamesPlatform();
   await platform.initialize();
   platform.loadingStart();
   const game = new Game(document.getElementById('game'), {

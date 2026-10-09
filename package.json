@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "build": "node build.mjs",
+    "build:gd": "node build.mjs gd",
     "serve": "python serve.py dist 8000",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "package": "node build.mjs && powershell -NoProfile -Command \"Compress-Archive -Path dist\\* -DestinationPath crownloop-crazygames.zip -Force\""
+    "package": "node build.mjs && powershell -NoProfile -Command \"Compress-Archive -Path dist\\* -DestinationPath crownloop-crazygames.zip -Force\"",
+    "package:gd": "node build.mjs gd && powershell -NoProfile -Command \"Compress-Archive -Path dist-gd\\* -DestinationPath crownloop-gamedistribution.zip -Force\""
   },
   "keywords": [],
   "author": "",

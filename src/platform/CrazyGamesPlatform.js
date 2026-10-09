@@ -68,6 +68,7 @@ export class CrazyGamesPlatform {
     this.settingsMuted = false;
     this.adAudioMuted = false;
     this.adRequestPending = false;
+    this.adsEnabled = ADS_ENABLED; // whether the game offers ads at all (store, wheel)
   }
 
   async initialize() {

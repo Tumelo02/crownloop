@@ -323,10 +323,15 @@ export class Game {
     }
     window.addEventListener('resize', () => this.resize());
     this.resize();
-    this.screens.onPlay(() => this.enterWorld(true));
-    this.screens.onNameEnter(() => { if (this.state === GameState.MENU) this.enterWorld(true); });
-    this.screens.onNewWorld(() => this.enterWorld(false));
-    this.screens.onRejoin(() => this.rejoinMatch());
+    // Platforms with break ads (GameDistribution) show one after the tap, before the match.
+    this.screens.onPlay(() => this.afterBreakAd(() => this.enterWorld(true)));
+    this.screens.onNameEnter(() => { if (this.state === GameState.MENU) this.afterBreakAd(() => this.enterWorld(true)); });
+    this.screens.onNewWorld(() => this.afterBreakAd(() => this.enterWorld(false)));
+    this.screens.onRejoin(() => this.afterBreakAd(() => this.rejoinMatch()));
+    this.platform?.bindPause?.(
+      () => this.loop.stop(),
+      () => { if (this.state === GameState.PLAYING || this.state === GameState.RESPAWNING) this.loop.start(); },
+    );
     this.screens.onHome(() => this.goHome());
     this.screens.showStart(this.playerName, WORLD.CAPACITY, this.career.snapshot);
     this.paintIcons();
@@ -1554,6 +1559,21 @@ export class Game {
     this.title.show();
     this.audio.playMusic('menu');
     this.missionsPanel.renderBadge();
+  }
+
+  /** Runs `start` after the platform's break ad (if it has one and one is due), else at once. */
+  afterBreakAd(start) {
+    if (this.breakAdPending) return;
+    if (typeof this.platform?.showBreakAd !== 'function') {
+      start();
+      return;
+    }
+    this.audio.unlock(); // still inside the tap, so sound can start after the ad
+    this.breakAdPending = true;
+    this.platform.showBreakAd(() => {
+      this.breakAdPending = false;
+      start();
+    });
   }
 
   startMidgameAd() {
